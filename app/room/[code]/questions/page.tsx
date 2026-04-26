@@ -5,8 +5,8 @@ import { supabase } from '@/lib/supabase'
 import type { Player, Question, Room } from '@/lib/types'
 import { Avatar, Btn, FloatingShapes, GlassPanel, Inp, Label, ProgressBar, T } from '@/components/ui'
 
-const MIN_QUESTIONS = 2
-const MAX_QUESTIONS = 4
+const MIN_QUESTIONS = 3
+const MAX_QUESTIONS = 5
 
 const EXAMPLE_QUESTIONS = [
   'Mon premier groupe préféré ?',
