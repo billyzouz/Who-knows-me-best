@@ -42,7 +42,12 @@ export default function HubPage() {
   const router = useRouter()
 
   return (
-    <div className="home-layout">
+    <div style={{
+      position: 'relative', minHeight: '100vh',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      padding: '40px 24px', paddingBottom: 'max(40px, env(safe-area-inset-bottom))',
+      overflow: 'hidden',
+    }}>
       <FloatingShapes density="sparse" />
 
       <div className="fade-up" style={{ width: '100%', maxWidth: 860, position: 'relative', zIndex: 3 }}>
