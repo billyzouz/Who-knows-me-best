@@ -24,9 +24,9 @@ const GAMES = [
     sub: 'Les aveux qui changent tout.',
     gradient: 'linear-gradient(135deg, #be185d 0%, #ec4899 100%)',
     glow: 'rgba(236,72,153,0.5)',
-    badge: 'Bientôt',
-    badgeColor: '#f59e0b',
-    available: false,
+    badge: 'Disponible',
+    badgeColor: '#22c55e',
+    available: true,
   },
   {
     href: '/party/truth-or-dare',
