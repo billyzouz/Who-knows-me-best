@@ -22,6 +22,10 @@ export default function PlayPage() {
   const [guessError, setGuessError] = useState('')
   const [validationOverrides, setValidationOverrides] = useState<Record<string, boolean>>({})
 
+  const GUESS_TIMER = 30
+  const [timeLeft, setTimeLeft] = useState(GUESS_TIMER)
+  const timerFiredRef = useRef(false)
+
   const gameStateRef = useRef<GameState | null>(null)
   const playersRef = useRef<Player[]>([])
   const questionsRef = useRef<Question[]>([])
@@ -29,6 +33,23 @@ export default function PlayPage() {
   useEffect(() => { gameStateRef.current = gameState }, [gameState])
   useEffect(() => { playersRef.current = players }, [players])
   useEffect(() => { questionsRef.current = questions }, [questions])
+
+  useEffect(() => {
+    if (!gameState || gameState.phase !== 'guessing') { setTimeLeft(GUESS_TIMER); timerFiredRef.current = false; return }
+    const start = new Date(gameState.updated_at).getTime()
+    const tick = () => {
+      const elapsed = Math.floor((Date.now() - start) / 1000)
+      const left = Math.max(0, GUESS_TIMER - elapsed)
+      setTimeLeft(left)
+      return left
+    }
+    tick()
+    const interval = setInterval(() => {
+      const left = tick()
+      if (left <= 0) clearInterval(interval)
+    }, 500)
+    return () => clearInterval(interval)
+  }, [gameState?.phase, gameState?.updated_at])
 
   const loadGuesses = useCallback(async (questionId: string): Promise<Guess[]> => {
     const { data } = await supabase.from('guesses').select().eq('question_id', questionId)
@@ -107,6 +128,34 @@ export default function PlayPage() {
   function normalize(s: string) {
     return s.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ')
   }
+
+  const myIdRef = useRef<string | null>(null)
+  const myTokenRef = useRef<string | null>(null)
+  const isSubjectRef = useRef(false)
+  useEffect(() => { myIdRef.current = myId }, [myId])
+  useEffect(() => { myTokenRef.current = myToken }, [myToken])
+
+  useEffect(() => {
+    if (!gameState) return
+    const id = sessionStorage.getItem(`player_${code}`)
+    isSubjectRef.current = id === gameState.current_subject_id
+  }, [gameState?.current_subject_id, code])
+
+  useEffect(() => {
+    if (timeLeft > 0 || timerFiredRef.current) return
+    if (!isSubjectRef.current) return
+    timerFiredRef.current = true
+    const gs = gameStateRef.current
+    if (!gs || gs.phase !== 'guessing') return
+    const id = myIdRef.current
+    const tok = myTokenRef.current
+    if (!id || !tok) return
+    fetch('/api/game-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'start_validating', playerId: id, token: tok, gameStateId: gs.id }),
+    })
+  }, [timeLeft])
 
   async function advanceToGuessing() {
     if (!gameState || !myId || !myToken || actioning) return
@@ -206,6 +255,26 @@ export default function PlayPage() {
 
   const phaseColor = { answering: T.purple, guessing: T.yellow, validating: T.green, reveal: T.pink }
   const phaseLabel = { answering: 'Répondre', guessing: 'Deviner', validating: 'Validation', reveal: 'Révélation' }
+
+  const timerColor = timeLeft > 10 ? T.yellow : timeLeft > 5 ? '#f97316' : '#ef4444'
+  const timerRadius = 22
+  const timerCircum = 2 * Math.PI * timerRadius
+  const timerDash = timerCircum * (timeLeft / GUESS_TIMER)
+  function TimerRing() {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <svg width={56} height={56} style={{ transform: 'rotate(-90deg)', flexShrink: 0 }}>
+          <circle cx={28} cy={28} r={timerRadius} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={4} />
+          <circle cx={28} cy={28} r={timerRadius} fill="none" stroke={timerColor} strokeWidth={4}
+            strokeDasharray={timerCircum} strokeDashoffset={timerCircum - timerDash}
+            strokeLinecap="round" style={{ transition: 'stroke-dashoffset 0.5s linear, stroke 0.3s' }} />
+        </svg>
+        <span style={{ fontFamily: 'monospace', fontWeight: 900, fontSize: 28, color: timerColor, minWidth: 28, lineHeight: 1, transform: 'translateY(1px)' }}>
+          {timeLeft}
+        </span>
+      </div>
+    )
+  }
 
   if (!currentQuestion) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', color: T.muted }}>Question introuvable...</div>
@@ -311,7 +380,10 @@ export default function PlayPage() {
             {gameState.phase === 'guessing' && isSubject && (
               <>
                 <GlassPanel style={{ padding: 24 }}>
-                  <Label style={{ marginBottom: 14 }}>Les autres devinent...</Label>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                    <Label>Les autres devinent...</Label>
+                    <TimerRing />
+                  </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {nonSubjectPlayers.map(p => {
                       const done = guesses.some(g => g.player_id === p.id)
@@ -330,27 +402,38 @@ export default function PlayPage() {
                     })}
                   </div>
                 </GlassPanel>
-                {allGuessed && <Btn variant="yellow" onClick={startValidating} disabled={actioning}>{actioning ? '...' : 'Révéler la réponse !'}</Btn>}
+                {(allGuessed || timeLeft === 0) && <Btn variant="yellow" onClick={startValidating} disabled={actioning}>{actioning ? '...' : 'Révéler la réponse !'}</Btn>}
               </>
             )}
 
             {/* GUESSING phase — guesser: not submitted */}
             {gameState.phase === 'guessing' && !isSubject && !myGuessSubmitted && (
               <GlassPanel style={{ padding: 24 }}>
-                <Label style={{ marginBottom: 12 }}>Ta devinette</Label>
-                <Inp placeholder="Ta réponse..." value={myGuess} onChange={e => setMyGuess(e.target.value)} onKeyDown={e => e.key === 'Enter' && submitGuess()} autoFocus maxLength={80} />
-                {guessError && <p style={{ color: '#f87171', fontSize: 13, margin: '8px 0 0' }}>{guessError}</p>}
-                <div style={{ marginTop: 14 }}>
-                  <Btn onClick={submitGuess} disabled={submittingGuess || !myGuess.trim()}>{submittingGuess ? '...' : 'Envoyer ma réponse →'}</Btn>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <Label>{timeLeft > 0 ? 'Ta devinette' : 'Temps écoulé !'}</Label>
+                  <TimerRing />
                 </div>
+                {timeLeft > 0 ? (
+                  <>
+                    <Inp placeholder="Ta réponse..." value={myGuess} onChange={e => setMyGuess(e.target.value)} onKeyDown={e => e.key === 'Enter' && submitGuess()} autoFocus maxLength={80} />
+                    {guessError && <p style={{ color: '#f87171', fontSize: 13, margin: '8px 0 0' }}>{guessError}</p>}
+                    <div style={{ marginTop: 14 }}>
+                      <Btn onClick={submitGuess} disabled={submittingGuess || !myGuess.trim()}>{submittingGuess ? '...' : 'Envoyer ma réponse →'}</Btn>
+                    </div>
+                  </>
+                ) : (
+                  <p style={{ fontSize: 14, color: T.muted, marginTop: 8 }}>Le sujet va révéler la réponse...</p>
+                )}
               </GlassPanel>
             )}
 
             {/* GUESSING phase — guesser: submitted */}
             {gameState.phase === 'guessing' && !isSubject && myGuessSubmitted && (
               <GlassPanel glow={T.green} style={{ padding: 32, textAlign: 'center' }}>
-                <div style={{ fontSize: 44, marginBottom: 12 }}>✅</div>
-                <p style={{ fontWeight: 800, fontSize: 20, color: T.green }}>Réponse envoyée !</p>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+                  <TimerRing />
+                </div>
+                <p style={{ fontWeight: 800, fontSize: 20, color: T.green, margin: 0 }}>Réponse envoyée !</p>
                 <p style={{ fontSize: 14, color: T.muted, marginTop: 6 }}>En attente des autres joueurs...</p>
               </GlassPanel>
             )}
