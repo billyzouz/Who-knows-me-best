@@ -45,7 +45,7 @@ export default function HubPage() {
     <div style={{
       position: 'relative', minHeight: '100vh',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      padding: '40px 24px', paddingBottom: 'max(40px, env(safe-area-inset-bottom))',
+      padding: '20px 24px', paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
       overflow: 'hidden',
     }}>
       <FloatingShapes density="sparse" />
@@ -53,12 +53,12 @@ export default function HubPage() {
       <div className="fade-up" style={{ width: '100%', maxWidth: 860, position: 'relative', zIndex: 3 }}>
 
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: 52 }}>
-          <div className="wobble" style={{ fontSize: 52, display: 'inline-block', marginBottom: 16 }}>🕹️</div>
-          <h1 style={{ fontWeight: 900, fontSize: 'clamp(30px, 5vw, 52px)', color: '#fff', margin: 0, letterSpacing: '-0.03em', lineHeight: 1.1 }}>
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <div className="wobble" style={{ fontSize: 40, display: 'inline-block', marginBottom: 10 }}>🕹️</div>
+          <h1 style={{ fontWeight: 900, fontSize: 'clamp(26px, 4vw, 44px)', color: '#fff', margin: 0, letterSpacing: '-0.03em', lineHeight: 1.1 }}>
             Choisis ton jeu
           </h1>
-          <p style={{ color: T.muted, fontSize: 15, marginTop: 12, fontWeight: 500 }}>
+          <p style={{ color: T.muted, fontSize: 14, marginTop: 8, fontWeight: 500 }}>
             Le quiz entre potes, en mode classique ou soirée 🎉
           </p>
         </div>
@@ -75,14 +75,14 @@ export default function HubPage() {
               whileTap={{ scale: 0.975 }}
               whileHover={{ scale: 1.03, boxShadow: card.shadowHover, borderColor: card.borderHover }}
               style={{
-                minHeight: 320,
+                minHeight: 260,
                 borderRadius: 28,
                 background: 'rgba(255,255,255,0.045)',
                 backdropFilter: 'blur(32px) saturate(160%)',
                 WebkitBackdropFilter: 'blur(32px) saturate(160%)',
                 border: `1.5px solid ${card.borderIdle}`,
                 boxShadow: card.shadowIdle,
-                padding: '36px 32px 28px',
+                padding: '24px 28px 22px',
                 cursor: 'pointer',
                 position: 'relative', overflow: 'hidden',
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -116,12 +116,12 @@ export default function HubPage() {
 
               {/* Icon */}
               <div style={{
-                width: 88, height: 88, borderRadius: 24,
+                width: 72, height: 72, borderRadius: 20,
                 background: card.gradient,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 42, flexShrink: 0,
-                boxShadow: `0 16px 40px ${card.glowColor}66`,
-                marginBottom: 24, position: 'relative',
+                fontSize: 34, flexShrink: 0,
+                boxShadow: `0 12px 32px ${card.glowColor}66`,
+                marginBottom: 16, position: 'relative',
               }}>
                 {card.emoji}
               </div>
@@ -150,7 +150,7 @@ export default function HubPage() {
               {/* CTA button — bottom of card */}
               <div style={{ flex: 1 }} />
               <div style={{
-                marginTop: 28, width: '100%', position: 'relative',
+                marginTop: 18, width: '100%', position: 'relative',
                 borderRadius: 16, overflow: 'hidden',
               }}>
                 <div style={{
