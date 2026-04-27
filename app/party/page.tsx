@@ -1,7 +1,6 @@
 'use client'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { T } from '@/components/ui'
 
 const GAMES = [
   {
@@ -50,9 +49,10 @@ export default function PartyPage() {
       position: 'relative', zIndex: 1,
       minHeight: '100vh',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      padding: '32px 20px', paddingBottom: 'max(32px, env(safe-area-inset-bottom))',
+      padding: 'clamp(20px, 4vh, 48px) 20px',
+      paddingBottom: 'max(clamp(20px, 4vh, 48px), env(safe-area-inset-bottom))',
     }}>
-      <div style={{ width: '100%', maxWidth: 480, position: 'relative' }}>
+      <div style={{ width: '100%', maxWidth: 480, position: 'relative', display: 'flex', flexDirection: 'column', gap: 'clamp(16px, 2.5vh, 32px)' }}>
 
         {/* Back */}
         <motion.button
@@ -60,24 +60,24 @@ export default function PartyPage() {
           whileTap={{ scale: 0.96 }}
           whileHover={{ x: -2 }}
           transition={{ duration: 0.15 }}
-          style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', fontWeight: 600, fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 32, display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}
+          style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', fontWeight: 600, fontSize: 13, cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit', alignSelf: 'flex-start' }}
         >
           ← Accueil
         </motion.button>
 
         {/* Header */}
-        <div style={{ marginBottom: 36, textAlign: 'center' }}>
-          <div className="wobble" style={{ fontSize: 52, display: 'inline-block', marginBottom: 12 }}>🍻</div>
-          <h1 style={{ fontWeight: 900, fontSize: 'clamp(28px, 7vw, 40px)', color: '#fff', margin: 0, letterSpacing: '-0.03em', lineHeight: 1.1 }}>
+        <div style={{ textAlign: 'center' }}>
+          <div className="wobble" style={{ fontSize: 'clamp(36px, 5vh, 52px)', display: 'inline-block', marginBottom: 'clamp(6px, 1vh, 12px)' }}>🍻</div>
+          <h1 style={{ fontWeight: 900, fontSize: 'clamp(24px, 4vh, 40px)', color: '#fff', margin: 0, letterSpacing: '-0.03em', lineHeight: 1.1 }}>
             Pack Soirée
           </h1>
-          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 15, marginTop: 10, fontWeight: 500 }}>
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 'clamp(13px, 1.6vh, 15px)', marginTop: 'clamp(6px, 1vh, 10px)', fontWeight: 500 }}>
             Les jeux qui font maaaaal 🔥
           </p>
         </div>
 
         {/* Game cards */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(10px, 1.5vh, 16px)' }}>
           {GAMES.map((game, i) => (
             <motion.div
               key={game.href}
@@ -93,7 +93,7 @@ export default function PartyPage() {
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
                 border: '1px solid rgba(255,255,255,0.09)',
-                padding: '20px 22px',
+                padding: 'clamp(14px, 2vh, 22px) 22px',
                 cursor: game.available ? 'pointer' : 'default',
                 opacity: game.available ? 1 : 0.6,
                 display: 'flex', alignItems: 'center', gap: 16,
@@ -101,31 +101,26 @@ export default function PartyPage() {
                 position: 'relative', overflow: 'hidden',
               }}
             >
-              {/* Gradient accent strip */}
               <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: game.gradient, borderRadius: '20px 0 0 20px' }} />
 
-              {/* Emoji icon */}
               <div style={{
-                width: 52, height: 52, borderRadius: 14, flexShrink: 0,
+                width: 'clamp(40px, 5.5vh, 52px)', height: 'clamp(40px, 5.5vh, 52px)',
+                borderRadius: 14, flexShrink: 0,
                 background: game.gradient,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 26, boxShadow: `0 8px 24px ${game.glow}`,
+                fontSize: 'clamp(20px, 2.8vh, 26px)', boxShadow: `0 8px 24px ${game.glow}`,
               }}>
                 {game.emoji}
               </div>
 
-              {/* Text */}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                  <span style={{ fontWeight: 800, fontSize: 16, color: '#fff' }}>{game.title}</span>
-                  <span style={{
-                    background: `${game.badgeColor}22`, border: `1px solid ${game.badgeColor}44`,
-                    color: game.badgeColor, borderRadius: 100, padding: '2px 8px', fontSize: 10, fontWeight: 700,
-                  }}>
+                  <span style={{ fontWeight: 800, fontSize: 'clamp(14px, 1.8vh, 16px)', color: '#fff' }}>{game.title}</span>
+                  <span style={{ background: `${game.badgeColor}22`, border: `1px solid ${game.badgeColor}44`, color: game.badgeColor, borderRadius: 100, padding: '2px 8px', fontSize: 10, fontWeight: 700 }}>
                     {game.badge}
                   </span>
                 </div>
-                <p style={{ fontWeight: 700, fontSize: 13, color: 'rgba(255,255,255,0.7)', margin: 0 }}>{game.desc}</p>
+                <p style={{ fontWeight: 700, fontSize: 'clamp(12px, 1.5vh, 13px)', color: 'rgba(255,255,255,0.7)', margin: 0 }}>{game.desc}</p>
                 <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', margin: '3px 0 0' }}>{game.sub}</p>
               </div>
 
