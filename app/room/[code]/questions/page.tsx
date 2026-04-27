@@ -55,8 +55,9 @@ export default function QuestionsPage() {
           const myIdNow = sessionStorage.getItem(`player_${code}`)
           if (myIdNow) setMyQuestions((q ?? []).filter((x: Question) => x.author_id === myIdNow))
         })
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${roomData.id}` }, (payload) => {
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms' }, (payload) => {
           const updated = payload.new as Room
+          if (updated.id !== roomData.id) return
           if (updated.status === 'playing') router.push(`/room/${code}/play`)
         })
         .subscribe()

@@ -83,8 +83,9 @@ export default function PlayPage() {
           const currentQ = getCurrentQuestion(gs, playersRef.current, questionsRef.current)
           if (currentQ) await loadGuesses(currentQ.id)
         })
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${roomData.id}` }, (payload) => {
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms' }, (payload) => {
           const r = payload.new as Room
+          if (r.id !== roomData.id) return
           if (r.status === 'finished') router.push(`/room/${code}/results`)
         })
         .subscribe()

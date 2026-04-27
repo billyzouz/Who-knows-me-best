@@ -41,8 +41,9 @@ export default function LobbyPage() {
           const { data: p } = await supabase.from('players').select().eq('room_id', roomData.id).order('created_at')
           setPlayers(p ?? [])
         })
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${roomData.id}` }, (payload) => {
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms' }, (payload) => {
           const updated = payload.new as Room
+          if (updated.id !== roomData.id) return
           if (updated.status === 'questions') router.push(`/room/${code}/questions`)
           if (updated.status === 'playing') router.push(`/room/${code}/play`)
         })
