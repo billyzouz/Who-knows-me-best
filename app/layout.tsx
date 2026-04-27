@@ -1,12 +1,33 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Space_Grotesk } from 'next/font/google'
+import SwRegister from '@/components/sw-register'
 import './globals.css'
 
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], weight: ['400','500','600','700'] })
 
+export const viewport: Viewport = {
+  themeColor: '#8b5cf6',
+  width: 'device-width',
+  initialScale: 1,
+}
+
 export const metadata: Metadata = {
   title: 'Who knows me best?',
-  description: 'Le quiz entre potes',
+  description: 'Le quiz entre potes — qui te connaît vraiment ?',
+  appleWebApp: {
+    capable: true,
+    title: 'Who Knows Me',
+    statusBarStyle: 'black-translucent',
+  },
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: '/apple-touch-icon.png',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -43,6 +64,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div style={{ position: 'relative', zIndex: 1 }}>
           {children}
         </div>
+        <SwRegister />
       </body>
     </html>
   )
