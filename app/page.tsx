@@ -63,12 +63,8 @@ export default function HubPage() {
           </p>
         </div>
 
-        {/* Cards — 1 col mobile, 2 col desktop */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: 24,
-        }}>
+        {/* Cards — 1 col mobile, 2 col ≥620px */}
+        <div className="hub-cards">
           {CARDS.map((card, i) => (
             <motion.div
               key={card.href}
