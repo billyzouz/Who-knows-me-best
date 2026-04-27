@@ -6,6 +6,8 @@ import type { Player, Question, Room } from '@/lib/types'
 import { Avatar, Btn, FloatingShapes, GlassPanel, Inp, Label, ProgressBar, T } from '@/components/ui'
 import { motion } from 'framer-motion'
 
+const AMBER = '#f59e0b'
+
 const MIN_QUESTIONS = 3
 const MAX_QUESTIONS = 5
 
@@ -30,6 +32,7 @@ export default function QuestionsPage() {
   const [answer, setAnswer] = useState('')
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [isDrinking, setIsDrinking] = useState(false)
   const textInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -37,6 +40,7 @@ export default function QuestionsPage() {
     const tok = sessionStorage.getItem(`token_${code}`)
     setMyId(id)
     setMyToken(tok)
+    setIsDrinking(sessionStorage.getItem(`mode_${code}`) === 'drinking')
     let channel: ReturnType<typeof supabase.channel> | null = null
 
     async function init() {
@@ -106,8 +110,23 @@ export default function QuestionsPage() {
 
   if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', color: T.muted }}>Chargement...</div>
 
+  const accentColor = isDrinking ? AMBER : T.purple
+
   return (
     <div className="questions-page">
+      {isDrinking && (
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
+            background: `
+              radial-gradient(ellipse 800px 600px at 20% 30%, rgba(245,158,11,0.18), transparent 55%),
+              radial-gradient(ellipse 700px 500px at 80% 70%, rgba(249,115,22,0.15), transparent 55%),
+              radial-gradient(ellipse 500px 400px at 50% 90%, rgba(251,146,60,0.1), transparent 60%)
+            `,
+          }}
+        />
+      )}
       <FloatingShapes density="sparse" />
 
       <div className="questions-inner" style={{ position: 'relative', zIndex: 2 }}>
@@ -155,7 +174,7 @@ export default function QuestionsPage() {
                         {count}/{MIN_QUESTIONS} {done ? '✓' : ''}
                       </span>
                     </div>
-                    <ProgressBar value={count} max={MIN_QUESTIONS} color={done ? T.green : T.purple} />
+                    <ProgressBar value={count} max={MIN_QUESTIONS} color={done ? T.green : accentColor} />
                   </div>
                 )
               })}
@@ -165,23 +184,23 @@ export default function QuestionsPage() {
           {/* CENTER: My questions + add form */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {myQuestions.map((q, i) => (
-              <GlassPanel key={q.id} glow={T.purple} style={{ padding: '16px 20px', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+              <GlassPanel key={q.id} glow={accentColor} style={{ padding: '16px 20px', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
                 <div style={{
                   width: 36, height: 36, borderRadius: 12, flexShrink: 0,
-                  background: `linear-gradient(135deg, ${T.purple}, ${T.pink})`,
+                  background: isDrinking ? `linear-gradient(135deg, ${AMBER}, #f97316)` : `linear-gradient(135deg, ${T.purple}, ${T.pink})`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontWeight: 800, fontSize: 14, color: '#fff',
+                  fontWeight: 800, fontSize: 14, color: isDrinking ? '#1a0a00' : '#fff',
                 }}>{i + 1}</div>
                 <div style={{ flex: 1 }}>
                   <p style={{ fontWeight: 700, fontSize: 14, margin: 0 }}>{q.text}</p>
-                  <p style={{ fontSize: 13, color: T.purple, margin: '4px 0 0', fontWeight: 600 }}>→ {q.answer}</p>
+                  <p style={{ fontSize: 13, color: accentColor, margin: '4px 0 0', fontWeight: 600 }}>→ {q.answer}</p>
                 </div>
                 <motion.button onClick={() => deleteQuestion(q.id)} whileTap={{ scale: 0.88 }} whileHover={{ scale: 1.1 }} transition={{ duration: 0.12 }} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: 8, width: 30, height: 30, color: T.muted, fontSize: 18, cursor: 'pointer', fontFamily: 'inherit' }}>×</motion.button>
               </GlassPanel>
             ))}
 
             {myQuestions.length < MAX_QUESTIONS && (
-              <GlassPanel glow={T.purple} style={{ padding: 20 }}>
+              <GlassPanel glow={accentColor} style={{ padding: 20 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                   <Label>Nouvelle question</Label>
                   <span style={{ fontFamily: 'monospace', fontSize: 12, color: T.muted, fontWeight: 700 }}>{myQuestions.length + 1} / {MAX_QUESTIONS}</span>

@@ -256,7 +256,9 @@ export default function PlayPage() {
   const subjectIndex = players.findIndex(p => p.id === gameState.current_subject_id)
   const sortedPlayers = [...players].sort((a, b) => b.score - a.score)
 
-  const phaseColor = { answering: T.purple, guessing: T.yellow, validating: T.green, reveal: T.pink }
+  const AMBER = '#f59e0b'
+  const accentColor = drinkingMode ? AMBER : T.purple
+  const phaseColor = { answering: accentColor, guessing: T.yellow, validating: T.green, reveal: T.pink }
   const phaseLabel = { answering: 'Répondre', guessing: 'Deviner', validating: 'Validation', reveal: 'Révélation' }
 
   const timerColor = timeLeft > 10 ? T.yellow : timeLeft > 5 ? '#f97316' : '#ef4444'
@@ -285,6 +287,19 @@ export default function PlayPage() {
 
   return (
     <div className="game-page">
+      {drinkingMode && (
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
+            background: `
+              radial-gradient(ellipse 800px 600px at 20% 30%, rgba(245,158,11,0.18), transparent 55%),
+              radial-gradient(ellipse 700px 500px at 80% 70%, rgba(249,115,22,0.15), transparent 55%),
+              radial-gradient(ellipse 500px 400px at 50% 90%, rgba(251,146,60,0.1), transparent 60%)
+            `,
+          }}
+        />
+      )}
       <FloatingShapes density="sparse" />
 
       <div className="game-inner" style={{ position: 'relative', zIndex: 2 }}>
@@ -299,7 +314,7 @@ export default function PlayPage() {
           </div>
           <div style={{ display: 'flex', gap: 5 }}>
             {players.map(p => (
-              <div key={p.id} style={{ width: 8, height: 8, borderRadius: '50%', background: p.id === gameState.current_subject_id ? T.purple : T.faint, boxShadow: p.id === gameState.current_subject_id ? `0 0 10px ${T.purple}` : 'none' }} />
+              <div key={p.id} style={{ width: 8, height: 8, borderRadius: '50%', background: p.id === gameState.current_subject_id ? accentColor : T.faint, boxShadow: p.id === gameState.current_subject_id ? `0 0 10px ${accentColor}` : 'none' }} />
             ))}
           </div>
         </div>
@@ -317,13 +332,13 @@ export default function PlayPage() {
                 return (
                   <div key={p.id} style={{
                     display: 'flex', alignItems: 'center', gap: 10, padding: '11px 12px', borderRadius: 14,
-                    background: isCurrent ? `${T.purple}18` : 'rgba(255,255,255,0.03)',
-                    border: isCurrent ? `1px solid ${T.purple}44` : '1px solid rgba(255,255,255,0.06)',
+                    background: isCurrent ? `${accentColor}18` : 'rgba(255,255,255,0.03)',
+                    border: isCurrent ? `1px solid ${accentColor}44` : '1px solid rgba(255,255,255,0.06)',
                   }}>
-                    <Avatar name={p.name} index={idx} size={34} ring={isCurrent ? T.purple : undefined} />
+                    <Avatar name={p.name} index={idx} size={34} ring={isCurrent ? accentColor : undefined} />
                     <div style={{ flex: 1 }}>
                       <p style={{ fontWeight: 700, fontSize: 13, color: '#fff', margin: 0 }}>
-                        {p.name}{isCurrent && <span style={{ color: T.purple, fontSize: 11, marginLeft: 6 }}>répond</span>}
+                        {p.name}{isCurrent && <span style={{ color: accentColor, fontSize: 11, marginLeft: 6 }}>répond</span>}
                       </p>
                     </div>
                     <span style={{ fontWeight: 800, fontSize: 17, color: T.yellow }}>{p.score}</span>
@@ -338,7 +353,7 @@ export default function PlayPage() {
 
             {/* Subject card */}
             <GlassPanel style={{ padding: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
-              {currentSubject && <Avatar name={currentSubject.name} index={players.indexOf(currentSubject)} size={56} ring={T.purple} />}
+              {currentSubject && <Avatar name={currentSubject.name} index={players.indexOf(currentSubject)} size={56} ring={accentColor} />}
               <div style={{ flex: 1 }}>
                 <Label>Tour de</Label>
                 <h2 style={{ fontWeight: 900, fontSize: 'clamp(20px, 2.5vw, 28px)', color: '#fff', letterSpacing: '-0.02em', margin: '4px 0 0' }}>
@@ -351,7 +366,7 @@ export default function PlayPage() {
             </GlassPanel>
 
             {/* Big question card */}
-            <GlassPanel glow={T.purple} style={{ padding: 'clamp(24px, 3vw, 44px)', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+            <GlassPanel glow={accentColor} style={{ padding: 'clamp(24px, 3vw, 44px)', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
               <Sparkles count={10} />
               <p style={{ fontSize: 12, color: T.muted, fontWeight: 700, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.14em' }}>La question</p>
               <h1 style={{ fontWeight: 800, fontSize: 'clamp(20px, 3vw, 38px)', color: '#fff', lineHeight: 1.25, letterSpacing: '-0.02em', margin: 0 }}>
@@ -544,7 +559,7 @@ export default function PlayPage() {
                       <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <Avatar name={p.name} index={players.indexOf(p)} size={28} />
                         <span style={{ fontWeight: 600, fontSize: 13, flex: 1 }}>{p.name}</span>
-                        <span style={{ fontWeight: 800, fontSize: 15, color: i === 0 ? T.yellow : T.purple }}>{p.score} pt{p.score !== 1 ? 's' : ''}</span>
+                        <span style={{ fontWeight: 800, fontSize: 15, color: i === 0 ? T.yellow : accentColor }}>{p.score} pt{p.score !== 1 ? 's' : ''}</span>
                       </div>
                     ))}
                   </div>
@@ -570,7 +585,7 @@ export default function PlayPage() {
                     display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px', borderRadius: 12,
                     background: 'rgba(255,255,255,0.02)',
                   }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 8, background: `${T.purple}22`, border: `1px solid ${T.purple}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 13 }}>✏️</div>
+                    <div style={{ width: 28, height: 28, borderRadius: 8, background: `${accentColor}22`, border: `1px solid ${accentColor}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 13 }}>✏️</div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontSize: 12, color: '#fff', margin: 0 }}><strong>{p?.name ?? '?'}</strong> a répondu</p>
                       <p style={{ fontSize: 11, color: T.faint, margin: '2px 0 0' }}>à l'instant</p>
@@ -581,6 +596,7 @@ export default function PlayPage() {
               {guesses.length === 0 && (
                 <p style={{ fontSize: 13, color: T.faint, fontStyle: 'italic', textAlign: 'center', padding: '12px 0' }}>Rien encore...</p>
               )}
+
             </div>
           </GlassPanel>
 

@@ -6,6 +6,8 @@ import type { Player, Room } from '@/lib/types'
 import { Avatar, Badge, Btn, FloatingShapes, GlassPanel, Label, PulsingDot, Sparkles, T } from '@/components/ui'
 import { motion } from 'framer-motion'
 
+const AMBER = '#f59e0b'
+
 export default function LobbyPage() {
   const { code } = useParams<{ code: string }>()
   const router = useRouter()
@@ -15,6 +17,7 @@ export default function LobbyPage() {
   const [myToken, setMyToken] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
+  const [isDrinking, setIsDrinking] = useState(false)
 
   async function copyCode() {
     await navigator.clipboard.writeText(code)
@@ -27,6 +30,7 @@ export default function LobbyPage() {
     const tok = sessionStorage.getItem(`token_${code}`)
     setMyId(id)
     setMyToken(tok)
+    setIsDrinking(sessionStorage.getItem(`mode_${code}`) === 'drinking')
     let channel: ReturnType<typeof supabase.channel> | null = null
 
     async function init() {
@@ -76,22 +80,37 @@ export default function LobbyPage() {
 
   const EMPTY_SLOTS = Math.max(0, 6 - players.length)
 
+  const accentColor = isDrinking ? AMBER : T.purple
+
   return (
     <div className="lobby-page">
+      {isDrinking && (
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
+            background: `
+              radial-gradient(ellipse 800px 600px at 20% 30%, rgba(245,158,11,0.18), transparent 55%),
+              radial-gradient(ellipse 700px 500px at 80% 70%, rgba(249,115,22,0.15), transparent 55%),
+              radial-gradient(ellipse 500px 400px at 50% 90%, rgba(251,146,60,0.1), transparent 60%)
+            `,
+          }}
+        />
+      )}
       <FloatingShapes density="dense" />
 
       <div className="lobby-layout fade-up">
 
         {/* LEFT / TOP: Code reveal */}
-        <GlassPanel glow={T.purple} style={{ padding: 'clamp(28px, 4vw, 56px)', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+        <GlassPanel glow={accentColor} style={{ padding: 'clamp(28px, 4vw, 56px)', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
           <Sparkles count={18} />
-          <Label style={{ marginBottom: 14 }}>Salon en attente</Label>
+          <Label color={accentColor} style={{ marginBottom: 14 }}>{isDrinking ? '🍺 Salon Quiz à Boire' : 'Salon en attente'}</Label>
           <p style={{ color: T.muted, fontSize: 14, marginBottom: 32 }}>Partage ce code à tes potes</p>
 
           <div className="lobby-code-size" style={{
             fontFamily: 'monospace', fontWeight: 900, fontSize: 58,
             letterSpacing: '0.15em', lineHeight: 1,
-            background: `linear-gradient(135deg, #fff 0%, ${T.purple} 100%)`,
+            background: `linear-gradient(135deg, #fff 0%, ${accentColor} 100%)`,
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
             marginBottom: 24,
@@ -107,9 +126,9 @@ export default function LobbyPage() {
               transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
               style={{
                 padding: '10px 20px', borderRadius: 100,
-                background: copied ? T.purpleDim : 'rgba(255,255,255,0.06)',
-                border: `1px solid ${copied ? T.purple : 'rgba(255,255,255,0.12)'}`,
-                color: copied ? T.purple : T.muted,
+                background: copied ? `${accentColor}22` : 'rgba(255,255,255,0.06)',
+                border: `1px solid ${copied ? accentColor : 'rgba(255,255,255,0.12)'}`,
+                color: copied ? accentColor : T.muted,
                 fontSize: 13, fontWeight: 600, cursor: 'pointer',
                 fontFamily: 'inherit',
               }}
@@ -120,8 +139,8 @@ export default function LobbyPage() {
 
           <div style={{
             marginTop: 36, padding: '16px 20px',
-            background: 'rgba(139,92,246,0.08)', borderRadius: 14,
-            border: `1px dashed ${T.purple}44`,
+            background: `${accentColor}11`, borderRadius: 14,
+            border: `1px dashed ${accentColor}44`,
             display: 'inline-flex', alignItems: 'center', gap: 10,
           }}>
             <PulsingDot color={T.green} />
@@ -160,7 +179,7 @@ export default function LobbyPage() {
                   </p>
                 </div>
                 {p.is_host && <span style={{ fontSize: 18 }}>👑</span>}
-                {p.id === myId && !p.is_host && <Badge color={T.purple}>toi</Badge>}
+                {p.id === myId && !p.is_host && <Badge color={accentColor}>toi</Badge>}
               </div>
             ))}
             {/* Empty slot indicators (desktop only) */}
@@ -178,8 +197,8 @@ export default function LobbyPage() {
 
           <div style={{ marginTop: 20 }}>
             {isHost ? (
-              <Btn onClick={startQuestionPhase} disabled={players.length < 2}>
-                {players.length < 2 ? 'En attente de joueurs...' : '🚀 Commencer la partie !'}
+              <Btn variant={isDrinking ? 'yellow' : 'primary'} onClick={startQuestionPhase} disabled={players.length < 2}>
+                {players.length < 2 ? 'En attente de joueurs...' : (isDrinking ? '🍺 Commencer la soirée !' : '🚀 Commencer la partie !')}
               </Btn>
             ) : (
               <p style={{ textAlign: 'center', color: T.muted, fontSize: 14 }}>

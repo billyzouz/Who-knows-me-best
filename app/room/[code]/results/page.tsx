@@ -4,14 +4,19 @@ import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { Player } from '@/lib/types'
 import { Avatar, Btn, Confetti, FloatingShapes, GlassPanel, Label, Sparkles, T } from '@/components/ui'
+import { motion } from 'framer-motion'
+
+const AMBER = '#f59e0b'
 
 export default function ResultsPage() {
   const { code } = useParams<{ code: string }>()
   const router = useRouter()
   const [players, setPlayers] = useState<Player[]>([])
   const [loading, setLoading] = useState(true)
+  const [isDrinking, setIsDrinking] = useState(false)
 
   useEffect(() => {
+    setIsDrinking(sessionStorage.getItem(`mode_${code}`) === 'drinking')
     async function init() {
       const { data: room } = await supabase.from('rooms').select().eq('code', code).single()
       if (!room) { router.push('/'); return }
@@ -33,8 +38,23 @@ export default function ResultsPage() {
   const podiumOrder = [top3[1], top3[0], top3[2]].filter(Boolean)
   const visToReal = [1, 0, 2]
 
+  const accentColor = isDrinking ? AMBER : T.purple
+
   return (
     <div className="results-page">
+      {isDrinking && (
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
+            background: `
+              radial-gradient(ellipse 800px 600px at 20% 30%, rgba(245,158,11,0.18), transparent 55%),
+              radial-gradient(ellipse 700px 500px at 80% 70%, rgba(249,115,22,0.15), transparent 55%),
+              radial-gradient(ellipse 500px 400px at 50% 90%, rgba(251,146,60,0.1), transparent 60%)
+            `,
+          }}
+        />
+      )}
       <Confetti count={48} />
       <FloatingShapes density="dense" />
 
@@ -43,17 +63,19 @@ export default function ResultsPage() {
         {/* Hero header */}
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <div style={{ fontSize: 64, marginBottom: 10 }}>🏆</div>
-          <Label color={T.yellow} style={{ marginBottom: 8 }}>Partie terminée</Label>
+          <Label color={isDrinking ? AMBER : T.yellow} style={{ marginBottom: 8 }}>{isDrinking ? '🍺 Soirée terminée !' : 'Partie terminée'}</Label>
           <h1 style={{
             fontWeight: 900, fontSize: 'clamp(28px, 5vw, 64px)', letterSpacing: '-0.04em', margin: 0,
-            background: `linear-gradient(135deg, ${T.yellow} 0%, ${T.pink} 50%, ${T.purple} 100%)`,
+            background: isDrinking
+              ? `linear-gradient(135deg, ${AMBER} 0%, #f97316 50%, #ef4444 100%)`
+              : `linear-gradient(135deg, ${T.yellow} 0%, ${T.pink} 50%, ${T.purple} 100%)`,
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
           }}>
             {top3[0]?.name} gagne !
           </h1>
           <p style={{ color: T.muted, fontSize: 16, marginTop: 8 }}>
-            connaît mieux les autres que personne d'autre 👀
+            {isDrinking ? 'Distribue un gage aux autres 🥃' : 'connaît mieux les autres que personne d\'autre 👀'}
           </p>
         </div>
 
@@ -115,7 +137,7 @@ export default function ResultsPage() {
                       {p.score} bonne{p.score !== 1 ? 's' : ''} réponse{p.score !== 1 ? 's' : ''}
                     </p>
                   </div>
-                  <span style={{ fontWeight: 900, fontSize: 'clamp(20px, 2.5vw, 28px)', color: i === 0 ? T.yellow : T.purple }}>
+                  <span style={{ fontWeight: 900, fontSize: 'clamp(20px, 2.5vw, 28px)', color: i === 0 ? T.yellow : accentColor }}>
                     {p.score}
                   </span>
                 </div>
@@ -124,13 +146,13 @@ export default function ResultsPage() {
           </GlassPanel>
 
           {/* Replay */}
-          <GlassPanel glow={T.purple} style={{ padding: 'clamp(20px, 3vw, 28px)' }}>
-            <Label style={{ marginBottom: 12 }}>Encore une partie ?</Label>
+          <GlassPanel glow={accentColor} style={{ padding: 'clamp(20px, 3vw, 28px)' }}>
+            <Label color={accentColor} style={{ marginBottom: 12 }}>{isDrinking ? '🍻 Encore une soirée ?' : 'Encore une partie ?'}</Label>
             <p style={{ fontSize: 14, color: T.muted, lineHeight: 1.6, marginBottom: 20 }}>
-              Garde la même équipe ou recommence avec de nouveaux potes.
+              {isDrinking ? 'Garde la même équipe, sortez les verres !' : 'Garde la même équipe ou recommence avec de nouveaux potes.'}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <Btn variant="pink" onClick={() => router.push('/')}>🎉 Rejouer</Btn>
+              <Btn variant={isDrinking ? 'yellow' : 'pink'} onClick={() => router.push('/')}>{isDrinking ? '🍺 Rejouer' : '🎉 Rejouer'}</Btn>
               <Btn variant="ghost" onClick={() => router.push('/')} style={{ fontSize: 14, padding: '12px 16px' }}>Nouveau salon</Btn>
             </div>
           </GlassPanel>
