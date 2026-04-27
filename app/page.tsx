@@ -43,126 +43,92 @@ export default function HubPage() {
 
   return (
     <div style={{
-      position: 'relative', minHeight: '100vh',
+      height: '100vh', overflow: 'hidden',
+      position: 'relative',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      padding: '20px 24px', paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
-      overflow: 'hidden',
+      padding: '2vh 24px',
     }}>
       <FloatingShapes density="sparse" />
 
-      <div className="fade-up" style={{ width: '100%', maxWidth: 860, position: 'relative', zIndex: 3 }}>
+      <div className="fade-up" style={{ width: '100%', maxWidth: 860, position: 'relative', zIndex: 3, display: 'flex', flexDirection: 'column', gap: '2.5vh' }}>
 
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div className="wobble" style={{ fontSize: 40, display: 'inline-block', marginBottom: 10 }}>🕹️</div>
-          <h1 style={{ fontWeight: 900, fontSize: 'clamp(26px, 4vw, 44px)', color: '#fff', margin: 0, letterSpacing: '-0.03em', lineHeight: 1.1 }}>
+        <div style={{ textAlign: 'center' }}>
+          <div className="wobble hub-emoji" style={{ fontSize: 40, display: 'inline-block', marginBottom: 10 }}>🕹️</div>
+          <h1 className="hub-title" style={{ fontWeight: 900, fontSize: 'clamp(24px, 3.5vw, 44px)', color: '#fff', margin: 0, letterSpacing: '-0.03em', lineHeight: 1.1 }}>
             Choisis ton jeu
           </h1>
-          <p style={{ color: T.muted, fontSize: 14, marginTop: 8, fontWeight: 500 }}>
+          <p className="hub-sub" style={{ color: T.muted, fontSize: 14, marginTop: 8, fontWeight: 500 }}>
             Le quiz entre potes, en mode classique ou soirée 🎉
           </p>
         </div>
 
-        {/* Cards — 1 col mobile, 2 col ≥620px */}
+        {/* Cards */}
         <div className="hub-cards">
           {CARDS.map((card, i) => (
             <motion.div
               key={card.href}
               onClick={() => router.push(card.href)}
-              initial={{ opacity: 0, y: 28 }}
+              className="hub-card"
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.12, duration: 0.38, ease: [0.4, 0, 0.2, 1] }}
+              transition={{ delay: i * 0.1, duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
               whileTap={{ scale: 0.975 }}
               whileHover={{ scale: 1.03, boxShadow: card.shadowHover, borderColor: card.borderHover }}
               style={{
-                minHeight: 260,
-                borderRadius: 28,
+                borderRadius: 24,
                 background: 'rgba(255,255,255,0.045)',
                 backdropFilter: 'blur(32px) saturate(160%)',
                 WebkitBackdropFilter: 'blur(32px) saturate(160%)',
                 border: `1.5px solid ${card.borderIdle}`,
                 boxShadow: card.shadowIdle,
-                padding: '24px 28px 22px',
+                padding: '22px 26px 20px',
                 cursor: 'pointer',
                 position: 'relative', overflow: 'hidden',
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
-                textAlign: 'center', gap: 0,
+                textAlign: 'center',
               }}
             >
-              {/* Subtle gradient wash */}
-              <div style={{
-                position: 'absolute', inset: 0, borderRadius: 28,
-                background: card.bgGlow,
-                pointerEvents: 'none',
-              }} />
-              {/* Top shine line */}
-              <div style={{
-                position: 'absolute', top: 0, left: '15%', right: '15%', height: 1,
-                background: `linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent)`,
-              }} />
+              {/* Gradient wash */}
+              <div style={{ position: 'absolute', inset: 0, borderRadius: 24, background: card.bgGlow, pointerEvents: 'none' }} />
+              {/* Top shine */}
+              <div style={{ position: 'absolute', top: 0, left: '15%', right: '15%', height: 1, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent)' }} />
 
               {/* Badge */}
               {card.badge && (
-                <div style={{
-                  position: 'absolute', top: 18, right: 18,
-                  background: 'linear-gradient(135deg, #db2777, #9333ea)',
-                  borderRadius: 100, padding: '4px 12px',
-                  fontSize: 10, fontWeight: 800, color: '#fff', letterSpacing: '0.06em',
-                  boxShadow: '0 4px 12px rgba(236,72,153,0.4)',
-                }}>
+                <div style={{ position: 'absolute', top: 14, right: 14, background: 'linear-gradient(135deg, #db2777, #9333ea)', borderRadius: 100, padding: '3px 10px', fontSize: 10, fontWeight: 800, color: '#fff', letterSpacing: '0.06em', boxShadow: '0 4px 12px rgba(236,72,153,0.4)' }}>
                   {card.badge}
                 </div>
               )}
 
               {/* Icon */}
-              <div style={{
-                width: 72, height: 72, borderRadius: 20,
-                background: card.gradient,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 34, flexShrink: 0,
-                boxShadow: `0 12px 32px ${card.glowColor}66`,
-                marginBottom: 16, position: 'relative',
-              }}>
+              <div className="hub-icon" style={{ width: 72, height: 72, borderRadius: 20, background: card.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 34, flexShrink: 0, boxShadow: `0 12px 32px ${card.glowColor}66`, marginBottom: 16, position: 'relative' }}>
                 {card.emoji}
               </div>
 
               {/* Title */}
-              <h2 style={{ fontWeight: 900, fontSize: 26, color: '#fff', margin: 0, letterSpacing: '-0.02em', position: 'relative' }}>
+              <h2 style={{ fontWeight: 900, fontSize: 'clamp(18px, 2vw, 24px)', color: '#fff', margin: 0, letterSpacing: '-0.02em', position: 'relative' }}>
                 {card.title}
               </h2>
 
               {/* Tagline */}
-              <p style={{ fontWeight: 600, fontSize: 15, color: 'rgba(255,255,255,0.6)', margin: '8px 0 0', position: 'relative' }}>
+              <p style={{ fontWeight: 600, fontSize: 14, color: 'rgba(255,255,255,0.6)', margin: '6px 0 0', position: 'relative' }}>
                 {card.tagline}
               </p>
 
               {/* Desc pill */}
-              <div style={{ marginTop: 16, position: 'relative' }}>
-                <span style={{
-                  background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 100, padding: '4px 14px',
-                  fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.4)',
-                }}>
+              <div style={{ marginTop: 12, position: 'relative' }}>
+                <span style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 100, padding: '3px 12px', fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.4)' }}>
                   {card.desc}
                 </span>
               </div>
 
-              {/* CTA button — bottom of card */}
+              {/* Spacer */}
               <div style={{ flex: 1 }} />
-              <div style={{
-                marginTop: 18, width: '100%', position: 'relative',
-                borderRadius: 16, overflow: 'hidden',
-              }}>
-                <div style={{
-                  width: '100%', padding: '14px 20px',
-                  background: card.gradient,
-                  borderRadius: 16,
-                  fontWeight: 800, fontSize: 15, color: '#fff',
-                  boxShadow: `0 8px 24px ${card.glowColor}44`,
-                  letterSpacing: '0.01em',
-                }}>
-                  {card.cta}
-                </div>
+
+              {/* CTA */}
+              <div className="hub-cta" style={{ marginTop: 16, width: '100%', position: 'relative', padding: '13px 20px', background: card.gradient, borderRadius: 14, fontWeight: 800, fontSize: 14, color: '#fff', boxShadow: `0 6px 20px ${card.glowColor}44` }}>
+                {card.cta}
               </div>
 
             </motion.div>
