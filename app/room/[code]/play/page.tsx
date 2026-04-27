@@ -17,6 +17,7 @@ export default function PlayPage() {
   const [myGuess, setMyGuess] = useState('')
   const [loading, setLoading] = useState(true)
   const [submittingGuess, setSubmittingGuess] = useState(false)
+  const [actioning, setActioning] = useState(false)
   const [guessError, setGuessError] = useState('')
   const [validationOverrides, setValidationOverrides] = useState<Record<string, boolean>>({})
 
@@ -61,8 +62,9 @@ export default function PlayPage() {
       setLoading(false)
 
       channel = supabase.channel(`play_${code}`)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'game_state', filter: `room_id=eq.${roomData.id}` }, async (payload) => {
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'game_state' }, async (payload) => {
           const gs = payload.new as GameState
+          if (gs.room_id !== roomData.id) return
           setGuesses([]); setMyGuess(''); setGameState(gs)
           const { data: p } = await supabase.from('players').select().eq('room_id', gs.room_id).order('created_at')
           const { data: q } = await supabase.from('questions').select().eq('room_id', gs.room_id).order('created_at')
@@ -100,8 +102,10 @@ export default function PlayPage() {
   }
 
   async function advanceToGuessing() {
-    if (!gameState) return
+    if (!gameState || actioning) return
+    setActioning(true)
     await supabase.from('game_state').update({ phase: 'guessing', updated_at: new Date().toISOString() }).eq('id', gameState.id)
+    setActioning(false)
   }
 
   async function submitGuess() {
@@ -121,21 +125,24 @@ export default function PlayPage() {
   }
 
   async function startValidating() {
-    if (!gameState) return
+    if (!gameState || actioning) return
+    setActioning(true)
     const currentQ = getCurrentQuestion(gameState, players, questions)
-    if (!currentQ) return
+    if (!currentQ) { setActioning(false); return }
     const { data: allGuesses } = await supabase.from('guesses').select().eq('question_id', currentQ.id)
-    if (!allGuesses) return
+    if (!allGuesses) { setActioning(false); return }
     const overrides: Record<string, boolean> = {}
     for (const g of allGuesses) overrides[g.id] = normalize(g.guess) === normalize(currentQ.answer)
     setValidationOverrides(overrides)
     await supabase.from('game_state').update({ phase: 'validating', updated_at: new Date().toISOString() }).eq('id', gameState.id)
+    setActioning(false)
   }
 
   async function validateAndScore() {
-    if (!gameState || !myId) return
+    if (!gameState || !myId || actioning) return
+    setActioning(true)
     const currentQ = getCurrentQuestion(gameState, players, questions)
-    if (!currentQ) return
+    if (!currentQ) { setActioning(false); return }
     const res = await fetch('/api/validate-scores', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -147,24 +154,27 @@ export default function PlayPage() {
       }),
     })
     if (!res.ok) console.error('validate-scores error', await res.text())
+    setActioning(false)
   }
 
   async function nextQuestion() {
-    if (!gameState || !room) return
+    if (!gameState || !room || actioning) return
+    setActioning(true)
     const subjectQuestions = questions.filter(q => q.author_id === gameState.current_subject_id)
     const nextIdx = gameState.current_question_idx + 1
     if (nextIdx < subjectQuestions.length) {
       await supabase.from('game_state').update({ current_question_idx: nextIdx, phase: 'answering', updated_at: new Date().toISOString() }).eq('id', gameState.id)
-      return
+      setActioning(false); return
     }
     const subjectIndex = players.findIndex(p => p.id === gameState.current_subject_id)
     const nextSubjectIndex = subjectIndex + 1
     if (nextSubjectIndex < players.length) {
       const nextSubject = players[nextSubjectIndex]
       await supabase.from('game_state').update({ current_subject_id: nextSubject.id, current_question_idx: 0, phase: 'answering', updated_at: new Date().toISOString() }).eq('id', gameState.id)
-      return
+      setActioning(false); return
     }
     await supabase.from('rooms').update({ status: 'finished' }).eq('id', room.id)
+    setActioning(false)
   }
 
   if (loading || !gameState) return (
@@ -274,7 +284,7 @@ export default function PlayPage() {
                   <p style={{ fontWeight: 900, fontSize: 'clamp(22px, 3vw, 36px)', color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>{currentQuestion.answer}</p>
                   <p style={{ fontSize: 13, color: T.muted, marginTop: 8 }}>Personne d'autre ne la voit encore</p>
                 </GlassPanel>
-                <Btn onClick={advanceToGuessing}>Les autres peuvent deviner →</Btn>
+                <Btn onClick={advanceToGuessing} disabled={actioning}>{actioning ? '...' : 'Les autres peuvent deviner →'}</Btn>
               </>
             )}
             {gameState.phase === 'answering' && !isSubject && (
@@ -309,7 +319,7 @@ export default function PlayPage() {
                     })}
                   </div>
                 </GlassPanel>
-                {allGuessed && <Btn variant="yellow" onClick={startValidating}>Révéler la réponse !</Btn>}
+                {allGuessed && <Btn variant="yellow" onClick={startValidating} disabled={actioning}>{actioning ? '...' : 'Révéler la réponse !'}</Btn>}
               </>
             )}
 
@@ -367,7 +377,7 @@ export default function PlayPage() {
                     })}
                   </div>
                 </GlassPanel>
-                <Btn variant="green" onClick={validateAndScore}>Valider les scores →</Btn>
+                <Btn variant="green" onClick={validateAndScore} disabled={actioning}>{actioning ? '...' : 'Valider les scores →'}</Btn>
               </>
             )}
 
@@ -431,7 +441,7 @@ export default function PlayPage() {
                 </GlassPanel>
 
                 {(isHost || isSubject) ? (
-                  <Btn onClick={nextQuestion}>Suivant →</Btn>
+                  <Btn onClick={nextQuestion} disabled={actioning}>{actioning ? '...' : 'Suivant →'}</Btn>
                 ) : (
                   <p style={{ textAlign: 'center', color: T.muted, fontSize: 14 }}>En attente de la suite...</p>
                 )}
