@@ -95,7 +95,7 @@ export default function DrinkingQuizPage() {
           {mode === 'home' && (
             <>
               <motion.button
-                onClick={() => router.push('/party/drinking-quiz')}
+                onClick={() => router.push('/party')}
                 whileTap={{ scale: 0.96 }}
                 style={{ background: 'none', border: 'none', color: T.muted, fontWeight: 600, fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 20, display: 'block', fontFamily: 'inherit' }}
               >
