@@ -2,10 +2,22 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export async function POST(req: Request) {
-  const { gameStateId, questionId, overrides, callerPlayerId } = await req.json()
+  const { gameStateId, questionId, overrides, callerPlayerId, callerToken } = await req.json()
 
-  if (!gameStateId || !questionId || !overrides || !callerPlayerId) {
+  if (!gameStateId || !questionId || !overrides || !callerPlayerId || !callerToken) {
     return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 })
+  }
+
+  // Verify token
+  const { data: caller, error: callerError } = await supabaseAdmin
+    .from('players')
+    .select('id')
+    .eq('id', callerPlayerId)
+    .eq('token', callerToken)
+    .single()
+
+  if (callerError || !caller) {
+    return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
   }
 
   // Verify caller is the current subject in validating phase

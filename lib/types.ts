@@ -15,6 +15,7 @@ export interface Player {
   name: string
   score: number
   is_host: boolean
+  token: string
   created_at: string
 }
 

@@ -27,6 +27,7 @@ export default function Home() {
       if (playerErr) throw playerErr
       await supabase.from('rooms').update({ host_id: player.id }).eq('id', room.id)
       sessionStorage.setItem(`player_${roomCode}`, player.id)
+      sessionStorage.setItem(`token_${roomCode}`, player.token)
       router.push(`/room/${roomCode}`)
     } catch (e: any) { setError(e.message); setLoading(false) }
   }
@@ -42,6 +43,7 @@ export default function Home() {
       const { data: player, error: playerErr } = await supabase.from('players').insert({ room_id: room.id, name: name.trim(), is_host: false }).select().single()
       if (playerErr) throw playerErr
       sessionStorage.setItem(`player_${roomCode}`, player.id)
+      sessionStorage.setItem(`token_${roomCode}`, player.token)
       router.push(`/room/${roomCode}`)
     } catch (e: any) { setError(e.message); setLoading(false) }
   }

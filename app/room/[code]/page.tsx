@@ -11,6 +11,7 @@ export default function LobbyPage() {
   const [room, setRoom] = useState<Room | null>(null)
   const [players, setPlayers] = useState<Player[]>([])
   const [myId, setMyId] = useState<string | null>(null)
+  const [myToken, setMyToken] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
 
@@ -22,7 +23,9 @@ export default function LobbyPage() {
 
   useEffect(() => {
     const id = sessionStorage.getItem(`player_${code}`)
+    const tok = sessionStorage.getItem(`token_${code}`)
     setMyId(id)
+    setMyToken(tok)
     let channel: ReturnType<typeof supabase.channel> | null = null
 
     async function init() {
@@ -55,8 +58,12 @@ export default function LobbyPage() {
   }, [code, router])
 
   async function startQuestionPhase() {
-    if (!room) return
-    await supabase.from('rooms').update({ status: 'questions' }).eq('id', room.id)
+    if (!room || !myId || !myToken) return
+    await fetch('/api/game-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'start_question_phase', playerId: myId, token: myToken }),
+    })
   }
 
   const myPlayer = players.find(p => p.id === myId)

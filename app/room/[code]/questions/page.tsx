@@ -21,6 +21,7 @@ export default function QuestionsPage() {
   const router = useRouter()
   const [room, setRoom] = useState<Room | null>(null)
   const [myId, setMyId] = useState<string | null>(null)
+  const [myToken, setMyToken] = useState<string | null>(null)
   const [players, setPlayers] = useState<Player[]>([])
   const [myQuestions, setMyQuestions] = useState<Question[]>([])
   const [allQuestions, setAllQuestions] = useState<Question[]>([])
@@ -32,7 +33,9 @@ export default function QuestionsPage() {
 
   useEffect(() => {
     const id = sessionStorage.getItem(`player_${code}`)
+    const tok = sessionStorage.getItem(`token_${code}`)
     setMyId(id)
+    setMyToken(tok)
     let channel: ReturnType<typeof supabase.channel> | null = null
 
     async function init() {
@@ -88,12 +91,12 @@ export default function QuestionsPage() {
   }
 
   async function startGame() {
-    if (!room || !canStartGame) return
-    const { data: playersData } = await supabase.from('players').select().eq('room_id', room.id).order('created_at')
-    if (!playersData || playersData.length === 0) return
-    const firstSubject = playersData[0]
-    await supabase.from('game_state').insert({ room_id: room.id, current_subject_id: firstSubject.id, current_question_idx: 0, phase: 'answering' })
-    await supabase.from('rooms').update({ status: 'playing' }).eq('id', room.id)
+    if (!room || !canStartGame || !myId || !myToken) return
+    await fetch('/api/game-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'start_game', playerId: myId, token: myToken }),
+    })
   }
 
   const myPlayer = players.find(p => p.id === myId)

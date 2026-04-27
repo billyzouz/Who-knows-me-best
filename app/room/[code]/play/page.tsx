@@ -14,6 +14,7 @@ export default function PlayPage() {
   const [gameState, setGameState] = useState<GameState | null>(null)
   const [guesses, setGuesses] = useState<Guess[]>([])
   const [myId, setMyId] = useState<string | null>(null)
+  const [myToken, setMyToken] = useState<string | null>(null)
   const [myGuess, setMyGuess] = useState('')
   const [loading, setLoading] = useState(true)
   const [submittingGuess, setSubmittingGuess] = useState(false)
@@ -43,13 +44,16 @@ export default function PlayPage() {
 
   useEffect(() => {
     const id = sessionStorage.getItem(`player_${code}`)
+    const tok = sessionStorage.getItem(`token_${code}`)
     setMyId(id)
+    setMyToken(tok)
     let channel: ReturnType<typeof supabase.channel> | null = null
 
     async function init() {
       const { data: roomData } = await supabase.from('rooms').select().eq('code', code).single()
       if (!roomData) { router.push('/'); return }
       if (roomData.status === 'finished') { router.push(`/room/${code}/results`); return }
+      if (roomData.status !== 'playing') { router.push(`/room/${code}`); return }
       setRoom(roomData)
       const { data: p } = await supabase.from('players').select().eq('room_id', roomData.id).order('created_at')
       const { data: q } = await supabase.from('questions').select().eq('room_id', roomData.id).order('created_at')
@@ -79,11 +83,14 @@ export default function PlayPage() {
             }
           }
         })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'guesses' }, async () => {
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'guesses' }, async (payload) => {
           const gs = gameStateRef.current
           if (!gs) return
           const currentQ = getCurrentQuestion(gs, playersRef.current, questionsRef.current)
-          if (currentQ) await loadGuesses(currentQ.id)
+          if (!currentQ) return
+          const changedQId = (payload.new as any)?.question_id
+          if (changedQId && changedQId !== currentQ.id) return
+          await loadGuesses(currentQ.id)
         })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms' }, (payload) => {
           const r = payload.new as Room
@@ -102,9 +109,13 @@ export default function PlayPage() {
   }
 
   async function advanceToGuessing() {
-    if (!gameState || actioning) return
+    if (!gameState || !myId || !myToken || actioning) return
     setActioning(true)
-    await supabase.from('game_state').update({ phase: 'guessing', updated_at: new Date().toISOString() }).eq('id', gameState.id)
+    await fetch('/api/game-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'advance_to_guessing', playerId: myId, token: myToken, gameStateId: gameState.id }),
+    })
     setActioning(false)
   }
 
@@ -125,7 +136,7 @@ export default function PlayPage() {
   }
 
   async function startValidating() {
-    if (!gameState || actioning) return
+    if (!gameState || !myId || !myToken || actioning) return
     setActioning(true)
     const currentQ = getCurrentQuestion(gameState, players, questions)
     if (!currentQ) { setActioning(false); return }
@@ -134,12 +145,16 @@ export default function PlayPage() {
     const overrides: Record<string, boolean> = {}
     for (const g of allGuesses) overrides[g.id] = normalize(g.guess) === normalize(currentQ.answer)
     setValidationOverrides(overrides)
-    await supabase.from('game_state').update({ phase: 'validating', updated_at: new Date().toISOString() }).eq('id', gameState.id)
+    await fetch('/api/game-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'start_validating', playerId: myId, token: myToken, gameStateId: gameState.id }),
+    })
     setActioning(false)
   }
 
   async function validateAndScore() {
-    if (!gameState || !myId || actioning) return
+    if (!gameState || !myId || !myToken || actioning) return
     setActioning(true)
     const currentQ = getCurrentQuestion(gameState, players, questions)
     if (!currentQ) { setActioning(false); return }
@@ -151,6 +166,7 @@ export default function PlayPage() {
         questionId: currentQ.id,
         overrides: validationOverrides,
         callerPlayerId: myId,
+        callerToken: myToken,
       }),
     })
     if (!res.ok) console.error('validate-scores error', await res.text())
@@ -158,22 +174,13 @@ export default function PlayPage() {
   }
 
   async function nextQuestion() {
-    if (!gameState || !room || actioning) return
+    if (!gameState || !myId || !myToken || actioning) return
     setActioning(true)
-    const subjectQuestions = questions.filter(q => q.author_id === gameState.current_subject_id)
-    const nextIdx = gameState.current_question_idx + 1
-    if (nextIdx < subjectQuestions.length) {
-      await supabase.from('game_state').update({ current_question_idx: nextIdx, phase: 'answering', updated_at: new Date().toISOString() }).eq('id', gameState.id)
-      setActioning(false); return
-    }
-    const subjectIndex = players.findIndex(p => p.id === gameState.current_subject_id)
-    const nextSubjectIndex = subjectIndex + 1
-    if (nextSubjectIndex < players.length) {
-      const nextSubject = players[nextSubjectIndex]
-      await supabase.from('game_state').update({ current_subject_id: nextSubject.id, current_question_idx: 0, phase: 'answering', updated_at: new Date().toISOString() }).eq('id', gameState.id)
-      setActioning(false); return
-    }
-    await supabase.from('rooms').update({ status: 'finished' }).eq('id', room.id)
+    await fetch('/api/game-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'next_question', playerId: myId, token: myToken, gameStateId: gameState.id }),
+    })
     setActioning(false)
   }
 
