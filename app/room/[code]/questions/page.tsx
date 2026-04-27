@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { Player, Question, Room } from '@/lib/types'
 import { Avatar, Btn, FloatingShapes, GlassPanel, Inp, Label, ProgressBar, T } from '@/components/ui'
+import { motion } from 'framer-motion'
 
 const MIN_QUESTIONS = 3
 const MAX_QUESTIONS = 5
@@ -175,7 +176,7 @@ export default function QuestionsPage() {
                   <p style={{ fontWeight: 700, fontSize: 14, margin: 0 }}>{q.text}</p>
                   <p style={{ fontSize: 13, color: T.purple, margin: '4px 0 0', fontWeight: 600 }}>→ {q.answer}</p>
                 </div>
-                <button onClick={() => deleteQuestion(q.id)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: 8, width: 30, height: 30, color: T.muted, fontSize: 18, cursor: 'pointer' }}>×</button>
+                <motion.button onClick={() => deleteQuestion(q.id)} whileTap={{ scale: 0.88 }} whileHover={{ scale: 1.1 }} transition={{ duration: 0.12 }} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: 8, width: 30, height: 30, color: T.muted, fontSize: 18, cursor: 'pointer', fontFamily: 'inherit' }}>×</motion.button>
               </GlassPanel>
             ))}
 

@@ -2,6 +2,7 @@
 
 * { box-sizing: border-box; }
 body { background: #06060f; color: #fff; }
+button, input, textarea, select { font-family: inherit; font-size: 16px; }
 input, textarea { outline: none; }
 input::placeholder { color: rgba(255,255,255,0.3); }
 input:focus { border-color: #8b5cf6 !important; }
@@ -102,6 +103,7 @@ input:focus { border-color: #8b5cf6 !important; }
   align-items: center;
   justify-content: center;
   padding: 32px 20px;
+  padding-bottom: max(32px, env(safe-area-inset-bottom));
   overflow: hidden;
 }
 
@@ -112,6 +114,7 @@ input:focus { border-color: #8b5cf6 !important; }
   justify-content: center;
   min-height: 100vh;
   padding: 32px 20px;
+  padding-bottom: max(32px, env(safe-area-inset-bottom));
   overflow: hidden;
 }
 .lobby-layout {
@@ -124,6 +127,7 @@ input:focus { border-color: #8b5cf6 !important; }
   position: relative;
   min-height: 100vh;
   padding: 28px 20px;
+  padding-bottom: max(28px, env(safe-area-inset-bottom));
   overflow-y: auto;
 }
 .questions-inner {
@@ -144,6 +148,7 @@ input:focus { border-color: #8b5cf6 !important; }
   position: relative;
   min-height: 100vh;
   padding: 28px 20px;
+  padding-bottom: max(28px, env(safe-area-inset-bottom));
   overflow-y: auto;
 }
 .game-inner {
@@ -161,6 +166,7 @@ input:focus { border-color: #8b5cf6 !important; }
   position: relative;
   min-height: 100vh;
   padding: 28px 20px;
+  padding-bottom: max(28px, env(safe-area-inset-bottom));
   overflow-y: auto;
 }
 .results-inner {

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Space_Grotesk } from 'next/font/google'
 import SwRegister from '@/components/sw-register'
+import PageTransition from '@/components/page-transition'
 import './globals.css'
 
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], weight: ['400','500','600','700'] })
@@ -9,6 +10,7 @@ export const viewport: Viewport = {
   themeColor: '#8b5cf6',
   width: 'device-width',
   initialScale: 1,
+  viewportFit: 'cover',
 }
 
 export const metadata: Metadata = {
@@ -62,7 +64,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </div>
         {/* Page content — above aurora */}
         <div style={{ position: 'relative', zIndex: 1 }}>
-          {children}
+          <PageTransition>{children}</PageTransition>
         </div>
         <SwRegister />
       </body>

@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { Player, Room } from '@/lib/types'
 import { Avatar, Badge, Btn, FloatingShapes, GlassPanel, Label, PulsingDot, Sparkles, T } from '@/components/ui'
+import { motion } from 'framer-motion'
 
 export default function LobbyPage() {
   const { code } = useParams<{ code: string }>()
@@ -99,19 +100,22 @@ export default function LobbyPage() {
           </div>
 
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button
+            <motion.button
               onClick={copyCode}
+              whileTap={{ scale: 0.94 }}
+              whileHover={{ y: -1 }}
+              transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
               style={{
                 padding: '10px 20px', borderRadius: 100,
                 background: copied ? T.purpleDim : 'rgba(255,255,255,0.06)',
                 border: `1px solid ${copied ? T.purple : 'rgba(255,255,255,0.12)'}`,
                 color: copied ? T.purple : T.muted,
                 fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                transition: 'all 0.2s',
+                fontFamily: 'inherit',
               }}
             >
               {copied ? '✓ Copié !' : '📋 Copier le code'}
-            </button>
+            </motion.button>
           </div>
 
           <div style={{

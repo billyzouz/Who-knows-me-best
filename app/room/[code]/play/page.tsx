@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { GameState, Guess, Player, Question, Room } from '@/lib/types'
 import { Avatar, Btn, FloatingShapes, GlassPanel, Inp, Label, Sparkles, T } from '@/components/ui'
+import { motion } from 'framer-motion'
 
 export default function PlayPage() {
   const { code } = useParams<{ code: string }>()
@@ -462,10 +463,13 @@ export default function PlayPage() {
                             <p style={{ fontWeight: 700, fontSize: 14, margin: 0 }}>{player?.name}</p>
                             <p style={{ fontSize: 13, color: T.muted, margin: '2px 0 0' }}>→ {g.guess}</p>
                           </div>
-                          <button
+                          <motion.button
                             onClick={() => setValidationOverrides(prev => ({ ...prev, [g.id]: !correct }))}
-                            style={{ width: 40, height: 40, borderRadius: '50%', border: 'none', background: correct ? T.green : 'rgba(255,255,255,0.1)', color: correct ? '#001a08' : T.faint, fontSize: 18, fontWeight: 900, cursor: 'pointer', boxShadow: correct ? `0 4px 14px ${T.green}55` : 'none', transition: 'all 0.2s' }}
-                          >{correct ? '✓' : '✗'}</button>
+                            whileTap={{ scale: 0.88 }}
+                            whileHover={{ scale: 1.1 }}
+                            transition={{ duration: 0.12 }}
+                            style={{ width: 40, height: 40, borderRadius: '50%', border: 'none', background: correct ? T.green : 'rgba(255,255,255,0.1)', color: correct ? '#001a08' : T.faint, fontSize: 18, fontWeight: 900, cursor: 'pointer', boxShadow: correct ? `0 4px 14px ${T.green}55` : 'none', fontFamily: 'inherit' }}
+                          >{correct ? '✓' : '✗'}</motion.button>
                         </div>
                       )
                     })}

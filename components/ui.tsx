@@ -1,5 +1,6 @@
 'use client'
 import React, { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 
 export const AVATAR_COLORS = ['#8b5cf6','#ec4899','#f59e0b','#10b981','#3b82f6','#f97316','#06b6d4','#a855f7']
 export const avatarColor = (i: number) => AVATAR_COLORS[i % AVATAR_COLORS.length]
@@ -73,27 +74,29 @@ export function Btn({ children, onClick, disabled, variant = 'primary', style }:
   }
   const v = variants[variant]
   return (
-    <button
+    <motion.button
       onClick={onClick}
       disabled={disabled}
-      onMouseEnter={e => { if (!disabled) e.currentTarget.style.transform = 'translateY(-2px)' }}
-      onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)' }}
+      whileTap={disabled ? undefined : { scale: 0.96 }}
+      whileHover={disabled ? undefined : { y: -2 }}
+      transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
       style={{
         width: '100%', padding: '16px 20px',
-        borderRadius: T.radius,
+        minHeight: 56,
+        borderRadius: 28,
         border: v.border ?? 'none',
         background: disabled ? 'rgba(255,255,255,0.08)' : v.bg,
         color: disabled ? T.muted : v.color,
         fontWeight: 700, fontSize: 17,
+        fontFamily: 'inherit',
         cursor: disabled ? 'not-allowed' : 'pointer',
-        transition: 'all 0.18s cubic-bezier(0.4,0,0.2,1)',
         opacity: disabled ? 0.5 : 1,
         boxShadow: !disabled && v.shadow ? v.shadow : 'none',
         ...style,
       }}
     >
       {children}
-    </button>
+    </motion.button>
   )
 }
 
