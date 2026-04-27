@@ -1,5 +1,6 @@
-const CACHE_NAME = 'wkmb-v2'
-const STATIC_ASSETS = ['/', '/favicon.ico', '/icon-192x192.png', '/icon-512x512.png']
+const CACHE_NAME = 'wkmb-v3'
+// Only truly immutable files (icons/favicon never change between deploys)
+const STATIC_ASSETS = ['/favicon.ico', '/icon-192x192.png', '/icon-512x512.png', '/apple-touch-icon.png']
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -23,10 +24,11 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url)
 
-  // Never intercept Supabase realtime/API or our own API routes
+  // Never intercept Supabase or API routes
   if (url.hostname.includes('supabase') || url.pathname.startsWith('/api/')) return
 
-  // Cache-first for immutable static assets
+  // Cache-first only for /_next/static (content-hashed, truly immutable per build)
+  // and the static icon/favicon files above
   if (url.pathname.startsWith('/_next/static') || STATIC_ASSETS.includes(url.pathname)) {
     event.respondWith(
       caches.match(event.request).then(
@@ -42,8 +44,14 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Network-first for pages — fall back to cache if offline
+  // Network-first for ALL HTML pages — always fresh, fallback to cache if offline
   event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
+    fetch(event.request)
+      .then((res) => {
+        const clone = res.clone()
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone))
+        return res
+      })
+      .catch(() => caches.match(event.request))
   )
 })
