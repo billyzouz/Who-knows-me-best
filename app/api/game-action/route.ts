@@ -57,6 +57,25 @@ export async function POST(req: Request) {
       break
     }
 
+    case 'submit_guess': {
+      const { gameStateId, guess } = params
+      if (!guess || typeof guess !== 'string' || !guess.trim()) return NextResponse.json({ error: 'Réponse manquante' }, { status: 400 })
+      const { data: gs } = await supabaseAdmin.from('game_state').select('current_subject_id, current_question_idx, phase, room_id').eq('id', gameStateId).single()
+      if (!gs) return NextResponse.json({ error: 'Partie introuvable' }, { status: 404 })
+      if (gs.room_id !== player.room_id) return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
+      if (gs.phase !== 'guessing') return NextResponse.json({ error: 'Phase incorrecte' }, { status: 400 })
+      if (gs.current_subject_id === playerId) return NextResponse.json({ error: 'Le sujet ne peut pas deviner' }, { status: 400 })
+      const { data: questions } = await supabaseAdmin.from('questions').select().eq('room_id', player.room_id).order('created_at')
+      const subjectQuestions = (questions ?? []).filter((q: any) => q.author_id === gs.current_subject_id)
+      const currentQuestion = subjectQuestions[gs.current_question_idx]
+      if (!currentQuestion) return NextResponse.json({ error: 'Question introuvable' }, { status: 404 })
+      await supabaseAdmin.from('guesses').upsert(
+        { question_id: currentQuestion.id, player_id: playerId, guess: guess.trim(), is_correct: false },
+        { onConflict: 'question_id,player_id' }
+      )
+      break
+    }
+
     case 'next_question': {
       const { gameStateId } = params
       const { data: gs } = await supabaseAdmin.from('game_state').select().eq('id', gameStateId).single()

@@ -121,13 +121,17 @@ export default function PlayPage() {
 
   async function submitGuess() {
     setGuessError('')
-    if (!myId || !gameState) { setGuessError('Erreur inattendue, recharge la page'); return }
+    if (!myId || !myToken || !gameState) { setGuessError('Erreur inattendue, recharge la page'); return }
     if (!myGuess.trim()) return
     const currentQ = getCurrentQuestion(gameState, players, questions)
     if (!currentQ) { setGuessError('Erreur inattendue, recharge la page'); return }
     setSubmittingGuess(true)
-    const { error } = await supabase.from('guesses').upsert({ question_id: currentQ.id, player_id: myId, guess: myGuess.trim(), is_correct: false }, { onConflict: 'question_id,player_id' })
-    if (error) { setGuessError(error.message); setSubmittingGuess(false); return }
+    const res = await fetch('/api/game-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'submit_guess', playerId: myId, token: myToken, gameStateId: gameState.id, guess: myGuess.trim() }),
+    })
+    if (!res.ok) { const { error } = await res.json(); setGuessError(error ?? 'Erreur'); setSubmittingGuess(false); return }
     setGuesses(prev => {
       const filtered = prev.filter(g => g.player_id !== myId)
       return [...filtered, { id: 'optimistic', question_id: currentQ.id, player_id: myId, guess: myGuess.trim(), is_correct: false, created_at: '' }]
