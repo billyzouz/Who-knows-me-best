@@ -28,9 +28,11 @@ export default function PlayPage() {
   useEffect(() => { playersRef.current = players }, [players])
   useEffect(() => { questionsRef.current = questions }, [questions])
 
-  const loadGuesses = useCallback(async (questionId: string) => {
+  const loadGuesses = useCallback(async (questionId: string): Promise<Guess[]> => {
     const { data } = await supabase.from('guesses').select().eq('question_id', questionId)
-    setGuesses(data ?? [])
+    const fetched = data ?? []
+    setGuesses(fetched)
+    return fetched
   }, [])
 
   function getCurrentQuestion(gs: GameState, p: Player[], q: Question[]): Question | null {
@@ -41,6 +43,7 @@ export default function PlayPage() {
   useEffect(() => {
     const id = sessionStorage.getItem(`player_${code}`)
     setMyId(id)
+    let channel: ReturnType<typeof supabase.channel> | null = null
 
     async function init() {
       const { data: roomData } = await supabase.from('rooms').select().eq('code', code).single()
@@ -56,42 +59,39 @@ export default function PlayPage() {
         if (currentQ) await loadGuesses(currentQ.id)
       }
       setLoading(false)
-    }
-    init()
 
-    const channel = supabase.channel(`play_${code}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'game_state' }, async (payload) => {
-        const gs = payload.new as GameState
-        setGuesses([]); setMyGuess(''); setGameState(gs)
-        const { data: p } = await supabase.from('players').select().eq('room_id', gs.room_id).order('created_at')
-        const { data: q } = await supabase.from('questions').select().eq('room_id', gs.room_id).order('created_at')
-        setPlayers(p ?? []); setQuestions(q ?? [])
-        const currentQ = getCurrentQuestion(gs, p ?? [], q ?? [])
-        if (currentQ) {
-          await loadGuesses(currentQ.id)
-          if (gs.phase === 'validating') {
-            const { data: fetchedGuesses } = await supabase.from('guesses').select().eq('question_id', currentQ.id)
-            if (fetchedGuesses) {
+      channel = supabase.channel(`play_${code}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'game_state', filter: `room_id=eq.${roomData.id}` }, async (payload) => {
+          const gs = payload.new as GameState
+          setGuesses([]); setMyGuess(''); setGameState(gs)
+          const { data: p } = await supabase.from('players').select().eq('room_id', gs.room_id).order('created_at')
+          const { data: q } = await supabase.from('questions').select().eq('room_id', gs.room_id).order('created_at')
+          setPlayers(p ?? []); setQuestions(q ?? [])
+          const currentQ = getCurrentQuestion(gs, p ?? [], q ?? [])
+          if (currentQ) {
+            const fetchedGuesses = await loadGuesses(currentQ.id)
+            if (gs.phase === 'validating') {
               const overrides: Record<string, boolean> = {}
               for (const g of fetchedGuesses) overrides[g.id] = normalize(g.guess) === normalize(currentQ.answer)
               setValidationOverrides(overrides)
             }
           }
-        }
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'guesses' }, async () => {
-        const gs = gameStateRef.current
-        if (!gs) return
-        const currentQ = getCurrentQuestion(gs, playersRef.current, questionsRef.current)
-        if (currentQ) await loadGuesses(currentQ.id)
-      })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms' }, (payload) => {
-        const r = payload.new as Room
-        if (r.status === 'finished') router.push(`/room/${code}/results`)
-      })
-      .subscribe()
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'guesses' }, async () => {
+          const gs = gameStateRef.current
+          if (!gs) return
+          const currentQ = getCurrentQuestion(gs, playersRef.current, questionsRef.current)
+          if (currentQ) await loadGuesses(currentQ.id)
+        })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${roomData.id}` }, (payload) => {
+          const r = payload.new as Room
+          if (r.status === 'finished') router.push(`/room/${code}/results`)
+        })
+        .subscribe()
+    }
+    init()
 
-    return () => { supabase.removeChannel(channel) }
+    return () => { if (channel) supabase.removeChannel(channel) }
   }, [code, router, loadGuesses])
 
   function normalize(s: string) {
@@ -105,11 +105,10 @@ export default function PlayPage() {
 
   async function submitGuess() {
     setGuessError('')
-    if (!myId) { setGuessError(`myId null — clé: player_${code}`); return }
-    if (!gameState) { setGuessError('gameState null'); return }
+    if (!myId || !gameState) { setGuessError('Erreur inattendue, recharge la page'); return }
     if (!myGuess.trim()) return
     const currentQ = getCurrentQuestion(gameState, players, questions)
-    if (!currentQ) { setGuessError(`question introuvable`); return }
+    if (!currentQ) { setGuessError('Erreur inattendue, recharge la page'); return }
     setSubmittingGuess(true)
     const { error } = await supabase.from('guesses').upsert({ question_id: currentQ.id, player_id: myId, guess: myGuess.trim(), is_correct: false }, { onConflict: 'question_id,player_id' })
     if (error) { setGuessError(error.message); setSubmittingGuess(false); return }
@@ -133,20 +132,20 @@ export default function PlayPage() {
   }
 
   async function validateAndScore() {
-    if (!gameState) return
+    if (!gameState || !myId) return
     const currentQ = getCurrentQuestion(gameState, players, questions)
     if (!currentQ) return
-    const { data: allGuesses } = await supabase.from('guesses').select().eq('question_id', currentQ.id)
-    if (!allGuesses) return
-    for (const g of allGuesses) {
-      const correct = validationOverrides[g.id] ?? false
-      await supabase.from('guesses').update({ is_correct: correct }).eq('id', g.id)
-      if (correct) {
-        const { data: guesser } = await supabase.from('players').select('score').eq('id', g.player_id).single()
-        if (guesser) await supabase.from('players').update({ score: guesser.score + 1 }).eq('id', g.player_id)
-      }
-    }
-    await supabase.from('game_state').update({ phase: 'reveal', updated_at: new Date().toISOString() }).eq('id', gameState.id)
+    const res = await fetch('/api/validate-scores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        gameStateId: gameState.id,
+        questionId: currentQ.id,
+        overrides: validationOverrides,
+        callerPlayerId: myId,
+      }),
+    })
+    if (!res.ok) console.error('validate-scores error', await res.text())
   }
 
   async function nextQuestion() {

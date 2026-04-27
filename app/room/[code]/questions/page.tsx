@@ -33,6 +33,7 @@ export default function QuestionsPage() {
   useEffect(() => {
     const id = sessionStorage.getItem(`player_${code}`)
     setMyId(id)
+    let channel: ReturnType<typeof supabase.channel> | null = null
 
     async function init() {
       const { data: roomData } = await supabase.from('rooms').select().eq('code', code).single()
@@ -46,25 +47,23 @@ export default function QuestionsPage() {
       setAllQuestions(q ?? [])
       if (id) setMyQuestions((q ?? []).filter((x: Question) => x.author_id === id))
       setLoading(false)
+
+      channel = supabase.channel(`questions_${code}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'questions', filter: `room_id=eq.${roomData.id}` }, async () => {
+          const { data: q } = await supabase.from('questions').select().eq('room_id', roomData.id)
+          setAllQuestions(q ?? [])
+          const myIdNow = sessionStorage.getItem(`player_${code}`)
+          if (myIdNow) setMyQuestions((q ?? []).filter((x: Question) => x.author_id === myIdNow))
+        })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${roomData.id}` }, (payload) => {
+          const updated = payload.new as Room
+          if (updated.status === 'playing') router.push(`/room/${code}/play`)
+        })
+        .subscribe()
     }
     init()
 
-    const channel = supabase.channel(`questions_${code}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'questions' }, async () => {
-        const { data: roomData } = await supabase.from('rooms').select().eq('code', code).single()
-        if (!roomData) return
-        const { data: q } = await supabase.from('questions').select().eq('room_id', roomData.id)
-        setAllQuestions(q ?? [])
-        const myIdNow = sessionStorage.getItem(`player_${code}`)
-        if (myIdNow) setMyQuestions((q ?? []).filter((x: Question) => x.author_id === myIdNow))
-      })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms' }, (payload) => {
-        const updated = payload.new as Room
-        if (updated.status === 'playing') router.push(`/room/${code}/play`)
-      })
-      .subscribe()
-
-    return () => { supabase.removeChannel(channel) }
+    return () => { if (channel) supabase.removeChannel(channel) }
   }, [code, router])
 
   async function addQuestion() {
@@ -88,7 +87,7 @@ export default function QuestionsPage() {
   }
 
   async function startGame() {
-    if (!room) return
+    if (!room || !canStartGame) return
     const { data: playersData } = await supabase.from('players').select().eq('room_id', room.id).order('created_at')
     if (!playersData || playersData.length === 0) return
     const firstSubject = playersData[0]

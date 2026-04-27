@@ -23,6 +23,7 @@ export default function LobbyPage() {
   useEffect(() => {
     const id = sessionStorage.getItem(`player_${code}`)
     setMyId(id)
+    let channel: ReturnType<typeof supabase.channel> | null = null
 
     async function init() {
       const { data: roomData } = await supabase.from('rooms').select().eq('code', code).single()
@@ -34,24 +35,22 @@ export default function LobbyPage() {
       const { data: p } = await supabase.from('players').select().eq('room_id', roomData.id).order('created_at')
       setPlayers(p ?? [])
       setLoading(false)
+
+      channel = supabase.channel(`lobby_${code}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'players', filter: `room_id=eq.${roomData.id}` }, async () => {
+          const { data: p } = await supabase.from('players').select().eq('room_id', roomData.id).order('created_at')
+          setPlayers(p ?? [])
+        })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${roomData.id}` }, (payload) => {
+          const updated = payload.new as Room
+          if (updated.status === 'questions') router.push(`/room/${code}/questions`)
+          if (updated.status === 'playing') router.push(`/room/${code}/play`)
+        })
+        .subscribe()
     }
     init()
 
-    const channel = supabase.channel(`lobby_${code}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, async () => {
-        const { data: r } = await supabase.from('rooms').select().eq('code', code).single()
-        if (!r) return
-        const { data: p } = await supabase.from('players').select().eq('room_id', r.id).order('created_at')
-        setPlayers(p ?? [])
-      })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms' }, (payload) => {
-        const updated = payload.new as Room
-        if (updated.status === 'questions') router.push(`/room/${code}/questions`)
-        if (updated.status === 'playing') router.push(`/room/${code}/play`)
-      })
-      .subscribe()
-
-    return () => { supabase.removeChannel(channel) }
+    return () => { if (channel) supabase.removeChannel(channel) }
   }, [code, router])
 
   async function startQuestionPhase() {
