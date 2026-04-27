@@ -22,6 +22,7 @@ export default function PlayPage() {
   const [actioning, setActioning] = useState(false)
   const [guessError, setGuessError] = useState('')
   const [validationOverrides, setValidationOverrides] = useState<Record<string, boolean>>({})
+  const [drinkingMode, setDrinkingMode] = useState(false)
 
   const GUESS_TIMER = 30
   const [timeLeft, setTimeLeft] = useState(GUESS_TIMER)
@@ -69,6 +70,7 @@ export default function PlayPage() {
     const tok = sessionStorage.getItem(`token_${code}`)
     setMyId(id)
     setMyToken(tok)
+    setDrinkingMode(sessionStorage.getItem(`mode_${code}`) === 'drinking')
     let channel: ReturnType<typeof supabase.channel> | null = null
 
     async function init() {
@@ -518,6 +520,16 @@ export default function PlayPage() {
                             ? <span style={{ background: T.green, color: '#001a08', borderRadius: 100, padding: '4px 12px', fontWeight: 800, fontSize: 12 }}>+1 PT</span>
                             : <span style={{ color: T.faint, fontSize: 20 }}>✗</span>
                           }
+                          {drinkingMode && (
+                            <span style={{
+                              background: guess?.is_correct ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.12)',
+                              border: `1px solid ${guess?.is_correct ? 'rgba(245,158,11,0.3)' : 'rgba(239,68,68,0.25)'}`,
+                              color: guess?.is_correct ? '#f59e0b' : '#f87171',
+                              borderRadius: 100, padding: '3px 10px', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap',
+                            }}>
+                              {guess?.is_correct ? '🍻 +2 gorgées' : '🥃 bois 1'}
+                            </span>
+                          )}
                         </div>
                       )
                     })}
