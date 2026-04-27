@@ -13,8 +13,8 @@ export default function DrinkingQuizPage() {
   const rules = [
     { icon: '✅', text: 'Bonne réponse', outcome: 'Tu distribues 2 gorgées' },
     { icon: '❌', text: 'Mauvaise réponse', outcome: 'Tu bois 1 gorgée' },
-    { icon: '🎯', text: 'Meilleur score', outcome: 'Distribue tout le stock' },
-    { icon: '💀', text: 'Zéro bonnes', outcome: 'Shot obligatoire 🫡' },
+    { icon: '🎯', text: 'Meilleur score', outcome: 'Tu distribues un gage' },
+    { icon: '💀', text: 'Zéro bonne réponse', outcome: 'Cul sec 🥃' },
   ]
 
   return (
