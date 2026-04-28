@@ -622,7 +622,11 @@ const mediumTruths = [
   "Quel joueur ici a les opinions politiques les plus étranges selon toi ?",
   "Quelle est la pire décision que tu aies prise sous l'effet de la colère pure ?",
   "As-tu déjà été attiré(e) par la mère/le père d'un(e) de tes potes ?",
-  "Qui est le/la plus immature émotionnellement dans cette pièce ?"
+  "Qui est le/la plus immature émotionnellement dans cette pièce ?",
+  "As-tu déjà feint la maladie pour échapper à une sortie avec le groupe présent ?",
+  "Quel est le plus grand service que tu aies refusé de rendre à un ami ?",
+  "As-tu déjà eu une aventure purement charnelle que tu n'assumes absolument pas ?",
+  "Quelle est la rumeur la plus absurde que tu aies entendue sur toi-même ?"
 ];
 
 const mediumActions = [
@@ -1023,7 +1027,12 @@ const hardTruths = [
   "As-tu déjà eu une relation intime en portant un déguisement très ridicule ?",
   "Qui parmi nous a l'air de cacher un traumatisme profond derrière ses blagues ?",
   "Quelle est l'histoire la plus embarrassante que tu aies eue avec des excréments (même petit) ?",
-  "As-tu déjà ressenti du plaisir en voyant un couple heureux se disputer violemment ?"
+  "As-tu déjà ressenti du plaisir en voyant un couple heureux se disputer violemment ?",
+  "As-tu déjà eu une pensée suicidaire fugace juste pour culpabiliser quelqu'un ?",
+  "Quelle est la chose la plus humiliante que tu aies faite pour récupérer un ex ?",
+  "As-tu déjà douté sérieusement de la paternité/maternité d'un enfant dans ton entourage ?",
+  "Quel est le fantasme moralement inacceptable que tu as déjà eu ?",
+  "Qui ici a, selon toi, le potentiel de devenir la pire version de lui-même dans 10 ans ?"
 ];
 
 const hardActions = [
