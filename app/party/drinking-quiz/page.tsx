@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Btn, FloatingShapes, GlassPanel, Inp, Label, T } from '@/components/ui'
+import { Btn, GlassPanel, Inp, Label, T } from '@/components/ui'
 import { motion } from 'framer-motion'
 
 // TODO: implémenter via colonne `mode='drinking'` sur table `rooms` pour que

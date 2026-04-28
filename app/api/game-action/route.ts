@@ -185,7 +185,8 @@ export async function POST(req: Request) {
     case 'reset_tod_room': {
       if (!player.is_host) return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
       // On remet la room en 'waiting' et on nettoie l'état de jeu
-      await supabaseAdmin.from('rooms').update({ status: 'waiting', mode: 'classic' }).eq('id', player.room_id)
+      const { data: currentRoom } = await supabaseAdmin.from('rooms').select('mode').eq('id', player.room_id).single()
+      await supabaseAdmin.from('rooms').update({ status: 'waiting', mode: currentRoom?.mode ?? 'classic' }).eq('id', player.room_id)
       await supabaseAdmin.from('game_state').delete().eq('room_id', player.room_id)
       break
     }
