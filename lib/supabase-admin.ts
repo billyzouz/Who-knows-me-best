@@ -6,7 +6,10 @@ export const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
   {
     global: {
-      fetch: (url, options) => fetch(url, { ...options, cache: 'no-store' })
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
     }
   }
 )
