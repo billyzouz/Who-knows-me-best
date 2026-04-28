@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wkmb-v3'
+const CACHE_NAME = 'wkmb-v4'
 // Only truly immutable files (icons/favicon never change between deploys)
 const STATIC_ASSETS = ['/favicon.ico', '/icon-192x192.png', '/icon-512x512.png', '/apple-touch-icon.png']
 
@@ -44,14 +44,7 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Network-first for ALL HTML pages — always fresh, fallback to cache if offline
-  event.respondWith(
-    fetch(event.request)
-      .then((res) => {
-        const clone = res.clone()
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone))
-        return res
-      })
-      .catch(() => caches.match(event.request))
-  )
+  // Network-only for HTML pages — never cache, always fresh
+  // (caching HTML causes stale JS references after deploys)
+  event.respondWith(fetch(event.request))
 })
