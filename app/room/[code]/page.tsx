@@ -44,8 +44,11 @@ export default function LobbyPage() {
       setPlayers(p ?? [])
       setLoading(false)
 
+      supabase.getChannels().filter(c => c.topic === `realtime:lobby_${code}`).forEach(c => supabase.removeChannel(c))
       channel = supabase.channel(`lobby_${code}`)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'players', filter: `room_id=eq.${roomData.id}` }, async () => {
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, async (payload) => {
+          const changed = payload.new as any
+          if (changed?.room_id !== roomData.id) return
           const { data: p } = await supabase.from('players').select().eq('room_id', roomData.id).order('created_at')
           setPlayers(p ?? [])
         })

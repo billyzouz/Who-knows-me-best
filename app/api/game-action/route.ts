@@ -36,7 +36,7 @@ export async function POST(req: Request) {
         const count = questions?.filter((q: any) => q.author_id === p.id).length ?? 0
         if (count < MIN_QUESTIONS) return NextResponse.json({ error: 'Pas assez de questions' }, { status: 400 })
       }
-      await supabaseAdmin.from('game_state').insert({ room_id: player.room_id, current_subject_id: players[0].id, current_question_idx: 0, phase: 'answering' })
+      await supabaseAdmin.from('game_state').insert({ room_id: player.room_id, current_subject_id: players[0].id, current_question_idx: 0, phase: 'answering', updated_at: new Date().toISOString() })
       await supabaseAdmin.from('rooms').update({ status: 'playing' }).eq('id', player.room_id)
       break
     }

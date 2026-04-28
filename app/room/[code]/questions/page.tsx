@@ -56,8 +56,11 @@ export default function QuestionsPage() {
       if (id) setMyQuestions((q ?? []).filter((x: Question) => x.author_id === id))
       setLoading(false)
 
+      supabase.getChannels().filter(c => c.topic === `realtime:questions_${code}`).forEach(c => supabase.removeChannel(c))
       channel = supabase.channel(`questions_${code}`)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'questions', filter: `room_id=eq.${roomData.id}` }, async () => {
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'questions' }, async (payload) => {
+          const changed = payload.new as any
+          if (changed?.room_id !== roomData.id) return
           const { data: q } = await supabase.from('questions').select().eq('room_id', roomData.id)
           setAllQuestions(q ?? [])
           const myIdNow = sessionStorage.getItem(`player_${code}`)

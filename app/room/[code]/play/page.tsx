@@ -38,7 +38,8 @@ export default function PlayPage() {
 
   useEffect(() => {
     if (!gameState || gameState.phase !== 'guessing') { setTimeLeft(GUESS_TIMER); timerFiredRef.current = false; return }
-    const start = new Date(gameState.updated_at).getTime()
+    const parsed = new Date(gameState.updated_at).getTime()
+    const start = isNaN(parsed) || parsed <= 0 ? Date.now() : parsed
     const tick = () => {
       const elapsed = Math.floor((Date.now() - start) / 1000)
       const left = Math.max(0, GUESS_TIMER - elapsed)
@@ -89,6 +90,7 @@ export default function PlayPage() {
       }
       setLoading(false)
 
+      supabase.getChannels().filter(c => c.topic === `realtime:play_${code}`).forEach(c => supabase.removeChannel(c))
       channel = supabase.channel(`play_${code}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'game_state' }, async (payload) => {
           const gs = payload.new as GameState
@@ -163,11 +165,16 @@ export default function PlayPage() {
   async function advanceToGuessing() {
     if (!gameState || !myId || !myToken || actioning) return
     setActioning(true)
-    await fetch('/api/game-action', {
+    const res = await fetch('/api/game-action', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'advance_to_guessing', playerId: myId, token: myToken, gameStateId: gameState.id }),
     })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      console.error('advance_to_guessing failed', res.status, body)
+      alert(`Erreur ${res.status}: ${body.error ?? 'inconnue'}`)
+    }
     setActioning(false)
   }
 
