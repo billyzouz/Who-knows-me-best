@@ -47,7 +47,9 @@ export default function DrinkingQuizPage() {
       const roomCode = code.trim().toUpperCase()
       const { data: room, error: roomErr } = await supabase.from('rooms').select().eq('code', roomCode).single()
       if (roomErr || !room) throw new Error('Salon introuvable')
-      if (room.mode !== 'drinking' && room.mode !== 'classic') throw new Error(`Ce code correspond à un salon "${room.mode ?? 'inconnu'}" — rejoins via le menu approprié.`)
+      console.log('MODE DÉTECTÉ:', room.mode)
+      const allowedModes = ['drinking', 'classic', null, '']
+      if (!allowedModes.includes(room.mode)) throw new Error(`Ce code correspond à un salon "${room.mode}" — rejoins via le menu approprié.`)
       if (room.status !== 'waiting') throw new Error('Partie déjà commencée')
       const { data: player, error: playerErr } = await supabase.from('players').insert({ room_id: room.id, name: name.trim(), is_host: false }).select().single()
       if (playerErr) throw playerErr
