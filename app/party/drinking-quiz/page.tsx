@@ -79,6 +79,15 @@ export default function DrinkingQuizPage() {
 
       <div className="fade-up" style={{ width: '100%', maxWidth: 440, position: 'relative', zIndex: 3 }}>
 
+        {/* Back button */}
+        <motion.button
+          onClick={() => mode === 'home' ? router.push('/party') : setMode('home')}
+          whileTap={{ scale: 0.96 }}
+          style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.45)', fontWeight: 600, fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 28, display: 'block', fontFamily: 'inherit' }}
+        >
+          ← {mode === 'home' ? 'Pack Soirée' : 'Retour'}
+        </motion.button>
+
         {/* Mobile header */}
         <div style={{ textAlign: 'center', marginBottom: 'clamp(24px, 3vh, 40px)' }}>
           <div className="wobble" style={{ fontSize: 'clamp(36px, 5vh, 52px)', display: 'inline-block', marginBottom: 10 }}>🍺</div>
@@ -94,14 +103,6 @@ export default function DrinkingQuizPage() {
 
           {mode === 'home' && (
             <>
-              <motion.button
-                onClick={() => router.push('/party')}
-                whileTap={{ scale: 0.96 }}
-                style={{ background: 'none', border: 'none', color: T.muted, fontWeight: 600, fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 20, display: 'block', fontFamily: 'inherit' }}
-              >
-                ← Pack Soirée
-              </motion.button>
-
               {/* Rules recap */}
               <div style={{ background: AMBER_DIM, border: `1px solid ${AMBER}33`, borderRadius: 14, padding: '14px 16px', marginBottom: 20 }}>
                 <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: AMBER, margin: '0 0 10px' }}>Règles</p>
@@ -129,7 +130,6 @@ export default function DrinkingQuizPage() {
 
           {mode === 'create' && (
             <>
-              <button onClick={() => setMode('home')} style={{ background: 'none', border: 'none', color: AMBER, fontWeight: 600, fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 16, display: 'block', fontFamily: 'inherit' }}>← Retour</button>
               <h2 style={{ fontWeight: 800, fontSize: 24, color: '#fff', margin: '0 0 4px' }}>Créer un salon</h2>
               <p style={{ color: T.muted, fontSize: 14, margin: '0 0 20px' }}>Tu seras le host de la partie</p>
               <Label color={AMBER} style={{ marginBottom: 8, display: 'block' }}>Ton prénom</Label>
@@ -143,7 +143,6 @@ export default function DrinkingQuizPage() {
 
           {mode === 'join' && (
             <>
-              <button onClick={() => setMode('home')} style={{ background: 'none', border: 'none', color: AMBER, fontWeight: 600, fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 16, display: 'block', fontFamily: 'inherit' }}>← Retour</button>
               <h2 style={{ fontWeight: 800, fontSize: 24, color: '#fff', margin: '0 0 4px' }}>Rejoindre une partie</h2>
               <p style={{ color: T.muted, fontSize: 14, margin: '0 0 20px' }}>Demande le code à ton host</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
