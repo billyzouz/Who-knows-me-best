@@ -27,6 +27,7 @@ export default function PlayPage() {
   const GUESS_TIMER = 30
   const [timeLeft, setTimeLeft] = useState(GUESS_TIMER)
   const timerFiredRef = useRef(false)
+  const guessingStartRef = useRef<number | null>(null)
 
   const gameStateRef = useRef<GameState | null>(null)
   const playersRef = useRef<Player[]>([])
@@ -37,9 +38,20 @@ export default function PlayPage() {
   useEffect(() => { questionsRef.current = questions }, [questions])
 
   useEffect(() => {
-    if (!gameState || gameState.phase !== 'guessing') { setTimeLeft(GUESS_TIMER); timerFiredRef.current = false; return }
-    const parsed = new Date(gameState.updated_at).getTime()
-    const start = isNaN(parsed) || parsed <= 0 ? Date.now() : parsed
+    if (!gameState || gameState.phase !== 'guessing') {
+      setTimeLeft(GUESS_TIMER)
+      timerFiredRef.current = false
+      guessingStartRef.current = null
+      return
+    }
+    // Initialize start time only once per guessing phase entry
+    if (guessingStartRef.current === null) {
+      const parsed = new Date(gameState.updated_at).getTime()
+      const elapsed = isNaN(parsed) ? Infinity : (Date.now() - parsed) / 1000
+      // Only trust DB timestamp if it's recent (less than GUESS_TIMER seconds ago)
+      guessingStartRef.current = (elapsed >= 0 && elapsed < GUESS_TIMER) ? parsed : Date.now()
+    }
+    const start = guessingStartRef.current
     const tick = () => {
       const elapsed = Math.floor((Date.now() - start) / 1000)
       const left = Math.max(0, GUESS_TIMER - elapsed)
@@ -137,6 +149,7 @@ export default function PlayPage() {
   const myIdRef = useRef<string | null>(null)
   const myTokenRef = useRef<string | null>(null)
   const isSubjectRef = useRef(false)
+  const mountTimeRef = useRef(Date.now())
   useEffect(() => { myIdRef.current = myId }, [myId])
   useEffect(() => { myTokenRef.current = myToken }, [myToken])
 
@@ -149,6 +162,7 @@ export default function PlayPage() {
   useEffect(() => {
     if (timeLeft > 0 || timerFiredRef.current) return
     if (!isSubjectRef.current) return
+    if (Date.now() - mountTimeRef.current < 1500) return
     timerFiredRef.current = true
     const gs = gameStateRef.current
     if (!gs || gs.phase !== 'guessing') return
