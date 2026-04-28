@@ -39,15 +39,6 @@ export default function LobbyPage() {
     let gameStarted = false
     let initCompleted = false
 
-    const handleUnload = () => {
-      if (!wasKickedRef.current && !gameStarted && !iAmHost && initCompleted && id && tok) {
-        const body = JSON.stringify({ action: 'leave_room', playerId: id, token: tok })
-        navigator.sendBeacon('/api/game-action', new Blob([body], { type: 'application/json' }))
-      }
-    }
-    window.addEventListener('beforeunload', handleUnload)
-    window.addEventListener('pagehide', handleUnload)
-
     async function init() {
       const { data: roomData } = await supabase.from('rooms').select().eq('code', code).single()
       if (!roomData) { router.push('/'); return }
@@ -101,8 +92,6 @@ export default function LobbyPage() {
     init()
 
     return () => {
-      window.removeEventListener('beforeunload', handleUnload)
-      window.removeEventListener('pagehide', handleUnload)
       if (channel) supabase.removeChannel(channel)
     }
   }, [code, router])
