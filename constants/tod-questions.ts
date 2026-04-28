@@ -427,13 +427,13 @@ const actions = [
 ];
 
 export const TOD_QUESTIONS: TODQuestion[] = [
-  ...truths.map((text, i) => ({
+  ...truths.slice(0, 200).map((text, i) => ({
     id: `soft-v-${i + 1}`,
     type: 'truth' as const,
     level: 'soft' as const,
     text
   })),
-  ...actions.map((text, i) => ({
+  ...actions.slice(0, 200).map((text, i) => ({
     id: `soft-a-${i + 1}`,
     type: 'action' as const,
     level: 'soft' as const,
