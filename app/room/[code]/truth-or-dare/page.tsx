@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { GameState, Guess, Player, Room } from '@/lib/types'
-import { Avatar, Btn, FloatingShapes, GlassPanel, Label, Sparkles, T } from '@/components/ui'
+import { Avatar, Btn, Confetti, FloatingShapes, GlassPanel, Label, Sparkles, T } from '@/components/ui'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TOD_QUESTIONS, TODQuestion } from '@/constants/tod-questions'
 
@@ -28,6 +28,26 @@ export default function TruthOrDareGamePage() {
     const { data } = await supabase.from('guesses').select().eq('question_id', gsId).maybeSingle()
     setRevealedChoice(data)
   }, [])
+
+  const flipSound = useRef<HTMLAudioElement | null>(null)
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // Préparez votre fichier son dans /public/sounds/flip.mp3
+      // Alternative libre de droits si le fichier n'existe pas :
+      // flipSound.current = new Audio('https://actions.google.com/sounds/v1/ui/mechanical_switch_1.ogg')
+      flipSound.current = new Audio('/sounds/flip.mp3')
+    }
+  }, [])
+
+  useEffect(() => {
+    if (revealedChoice && flipSound.current) {
+      flipSound.current.currentTime = 0
+      flipSound.current.play().catch(() => {
+        // Ignorer l'erreur si le navigateur bloque l'autoplay ou si le fichier est manquant
+      })
+    }
+  }, [revealedChoice])
 
   useEffect(() => {
     const id = sessionStorage.getItem(`player_${code}`)
@@ -183,6 +203,7 @@ export default function TruthOrDareGamePage() {
 
         {room?.status === 'tod_finished' ? (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 24, textAlign: 'center' }}>
+            <Confetti count={48} />
             <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', bounce: 0.5 }}>
               <span style={{ fontSize: 80 }}>🎉</span>
             </motion.div>
