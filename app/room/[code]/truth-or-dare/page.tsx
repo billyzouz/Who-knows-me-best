@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 import type { GameState, Guess, Player, Room } from '@/lib/types'
 import { Avatar, Btn, FloatingShapes, GlassPanel, Label, Sparkles, T } from '@/components/ui'
 import { motion, AnimatePresence } from 'framer-motion'
-import { TOD_QUESTIONS, TodQuestion } from '@/constants/tod-questions'
+import { TOD_QUESTIONS, TODQuestion } from '@/constants/tod-questions'
 
 const CYAN = '#06b6d4'
 const BLUE = '#3b82f6'
@@ -81,9 +81,9 @@ export default function TruthOrDareGamePage() {
   const difficulty = room?.mode?.split(':')[1] || 'mixte'
   
   // Filtrage local pour la performance
-  const filteredQuestions = TOD_QUESTIONS.filter(q => difficulty === 'mixte' || q.difficulty === difficulty)
+  const filteredQuestions = TOD_QUESTIONS.filter(q => difficulty === 'mixte' || q.level === difficulty)
 
-  async function selectCard(type: 'truth' | 'dare') {
+  async function selectCard(type: 'truth' | 'action') {
     if (!gameState || !myId || !myToken || actioning) return
     setActioning(true)
     
@@ -190,7 +190,7 @@ export default function TruthOrDareGamePage() {
                     </motion.button>
                     
                     <motion.button
-                      onClick={() => selectCard('dare')}
+                      onClick={() => selectCard('action')}
                       disabled={actioning}
                       whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                       style={{
