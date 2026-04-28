@@ -40,6 +40,15 @@ export default function ResultsPage() {
 
   const accentColor = isDrinking ? AMBER : T.purple
 
+  // Loser(s) for drinking mode
+  const minScore = players.length > 0 ? Math.min(...players.map(p => p.score)) : 0
+  const losers = players.filter(p => p.score === minScore)
+  // Only show cul sec if loser is not also the winner (edge case: 1 player)
+  const showCulSec = isDrinking && players.length > 1 && losers[0]?.id !== top3[0]?.id
+  const culSecName = losers.length === 1
+    ? losers[0].name
+    : losers.map(p => p.name).join(' & ')
+
   return (
     <div className="results-page">
       {isDrinking && (
@@ -75,7 +84,7 @@ export default function ResultsPage() {
             {top3[0]?.name} gagne !
           </h1>
           <p style={{ color: T.muted, fontSize: 16, marginTop: 8 }}>
-            {isDrinking ? 'Distribue un gage aux autres 🥃' : 'connaît mieux les autres que personne d\'autre 👀'}
+            {isDrinking ? '🎯 Distribue un gage aux perdants !' : 'connaît mieux les autres que personne d\'autre 👀'}
           </p>
         </div>
 
@@ -114,6 +123,23 @@ export default function ResultsPage() {
             })}
           </div>
         </GlassPanel>
+
+        {/* Cul sec banner — drinking mode only */}
+        {showCulSec && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4, duration: 0.4 }}
+            style={{
+              textAlign: 'center', marginBottom: 28,
+              padding: '18px 24px', borderRadius: 20,
+              background: 'rgba(239,68,68,0.10)',
+              border: '1px solid rgba(239,68,68,0.3)',
+            }}
+          >
+            <p style={{ fontWeight: 900, fontSize: 'clamp(18px, 3vw, 26px)', color: '#f87171', margin: 0, letterSpacing: '-0.01em' }}>
+              💀 {culSecName}, CUL SEC !&nbsp;&nbsp;🍺
+            </p>
+          </motion.div>
+        )}
 
         {/* Leaderboard + replay */}
         <div className="results-leaderboard">
