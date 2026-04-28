@@ -40,7 +40,7 @@ export default function TruthOrDareGamePage() {
       const { data: roomData } = await supabase.from('rooms').select().eq('code', code).single()
       if (!roomData) { router.push('/'); return }
       if (roomData.status === 'finished') { router.push(`/room/${code}/results`); return }
-      if (roomData.status !== 'playing_tod') { router.push(`/room/${code}`); return }
+      if (roomData.status !== 'playing_tod' && roomData.status !== 'tod_finished') { router.push(`/room/${code}`); return }
       
       setRoom(roomData)
       const { data: p } = await supabase.from('players').select().eq('room_id', roomData.id).order('created_at')
@@ -70,6 +70,15 @@ export default function TruthOrDareGamePage() {
           // Update immediately when someone makes a choice
           const newGuess = payload.new as Guess
           setRevealedChoice(newGuess)
+        })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms' }, (payload) => {
+          const r = payload.new as Room
+          if (r.id === roomData.id) {
+            setRoom(r)
+            if (r.status === 'waiting') {
+              router.push(`/room/${code}`)
+            }
+          }
         })
         .subscribe()
     }
@@ -110,6 +119,17 @@ export default function TruthOrDareGamePage() {
     setActioning(false)
   }
 
+  async function resetRoom() {
+    if (!myId || !myToken || actioning) return
+    setActioning(true)
+    await fetch('/api/game-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'reset_tod_room', playerId: myId, token: myToken }),
+    })
+    setActioning(false)
+  }
+
   if (loading || !gameState) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', color: T.muted }}>Chargement...</div>
   )
@@ -146,14 +166,38 @@ export default function TruthOrDareGamePage() {
               · {difficulty.toUpperCase()}
             </span>
           </div>
-          {isHost && (
-            <Btn variant="ghost" onClick={nextTurn} disabled={actioning} style={{ padding: '6px 12px', fontSize: 12 }}>
-              Passer le tour ⏭
-            </Btn>
-          )}
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            {gameState?.total_rounds && (
+              <span style={{ color: '#fff', fontWeight: 800, fontSize: 14, background: 'rgba(255,255,255,0.1)', padding: '6px 12px', borderRadius: 20 }}>
+                Tour {(gameState.current_question_idx || 0) + 1} / {gameState.total_rounds}
+              </span>
+            )}
+            {isHost && room?.status === 'playing_tod' && (
+              <Btn variant="ghost" onClick={nextTurn} disabled={actioning} style={{ padding: '6px 12px', fontSize: 12 }}>
+                Passer le tour ⏭
+              </Btn>
+            )}
+          </div>
         </div>
 
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 24, maxWidth: 600, margin: '0 auto', width: '100%' }}>
+        {room?.status === 'tod_finished' ? (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 24, textAlign: 'center' }}>
+            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', bounce: 0.5 }}>
+              <span style={{ fontSize: 80 }}>🎉</span>
+            </motion.div>
+            <h1 style={{ fontWeight: 900, fontSize: 'clamp(32px, 5vw, 48px)', color: '#fff', margin: 0 }}>Partie terminée !</h1>
+            <p style={{ color: T.muted, fontSize: 18, maxWidth: 400 }}>Merci d'avoir joué. Tout le monde a survécu à la séquence infernale !</p>
+            {isHost ? (
+              <Btn onClick={resetRoom} disabled={actioning} style={{ marginTop: 24, padding: '16px 32px', fontSize: 18, background: `linear-gradient(135deg, ${CYAN} 0%, ${BLUE} 100%)` }}>
+                {actioning ? '...' : 'Retourner au Lobby'}
+              </Btn>
+            ) : (
+              <p style={{ color: T.muted, fontSize: 14, marginTop: 24 }}>En attente du créateur pour relancer une partie...</p>
+            )}
+          </div>
+        ) : (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 24, maxWidth: 600, margin: '0 auto', width: '100%' }}>
           
           <GlassPanel style={{ padding: 20, display: 'flex', alignItems: 'center', gap: 16, width: '100%' }}>
             {currentSubject && <Avatar name={currentSubject.name} index={players.indexOf(currentSubject)} size={56} ring={CYAN} />}
@@ -250,6 +294,7 @@ export default function TruthOrDareGamePage() {
           </AnimatePresence>
 
         </div>
+        )}
       </div>
     </div>
   )

@@ -109,12 +109,27 @@ export async function POST(req: Request) {
       const { data: players } = await supabaseAdmin.from('players').select().eq('room_id', player.room_id).order('created_at')
       if (!players || players.length < 2) return NextResponse.json({ error: 'Pas assez de joueurs' }, { status: 400 })
       
-      // Création du game_state initial pour ToD
+      // Générer une séquence où chaque joueur passe exactement 3 fois
+      const baseIds = players.map(p => p.id)
+      let sequence: string[] = []
+      for (let i = 0; i < 3; i++) {
+        sequence = sequence.concat(baseIds)
+      }
+      
+      // Mélange (Shuffle) de Fisher-Yates
+      for (let i = sequence.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [sequence[i], sequence[j]] = [sequence[j], sequence[i]]
+      }
+
+      // Création du game_state initial pour ToD avec la séquence mélangée
       await supabaseAdmin.from('game_state').insert({ 
         room_id: player.room_id, 
-        current_subject_id: players[0].id, 
+        current_subject_id: sequence[0], 
         current_question_idx: 0, 
-        phase: 'answering', 
+        phase: 'answering',
+        player_sequence: sequence,
+        total_rounds: sequence.length,
         updated_at: new Date().toISOString() 
       })
       await supabaseAdmin.from('rooms').update({ status: 'playing_tod', mode: `tod:${difficulty}` }).eq('id', player.room_id)
@@ -144,18 +159,34 @@ export async function POST(req: Request) {
       const { data: allPlayers } = await supabaseAdmin.from('players').select().eq('room_id', gs.room_id).order('created_at')
       if (!allPlayers) return NextResponse.json({ error: 'Données manquantes' }, { status: 500 })
       
-      const subjectIndex = allPlayers.findIndex((p: any) => p.id === gs.current_subject_id)
-      const nextSubjectIndex = (subjectIndex + 1) % allPlayers.length
+      const nextIdx = gs.current_question_idx + 1
+      const totalRounds = gs.total_rounds || (allPlayers.length * 3)
+      const sequence = gs.player_sequence || allPlayers.map((p: any) => p.id) // Fallback si pas de séquence (ne devrait pas arriver)
       
       // On supprime l'ancien guess pour ce gameState pour faire place nette pour le prochain tour
       await supabaseAdmin.from('guesses').delete().eq('question_id', gameStateId)
       
-      await supabaseAdmin.from('game_state').update({ 
-        current_subject_id: allPlayers[nextSubjectIndex].id, 
-        current_question_idx: gs.current_question_idx + 1, 
-        phase: 'answering', 
-        updated_at: new Date().toISOString() 
-      }).eq('id', gameStateId)
+      if (nextIdx >= totalRounds) {
+        // Fin de la séquence, on termine la partie ToD
+        await supabaseAdmin.from('rooms').update({ status: 'tod_finished' }).eq('id', gs.room_id)
+      } else {
+        // On passe au joueur suivant dans la séquence
+        const nextSubjectId = sequence[nextIdx] ?? allPlayers[0].id
+        await supabaseAdmin.from('game_state').update({ 
+          current_subject_id: nextSubjectId, 
+          current_question_idx: nextIdx, 
+          phase: 'answering', 
+          updated_at: new Date().toISOString() 
+        }).eq('id', gameStateId)
+      }
+      break
+    }
+
+    case 'reset_tod_room': {
+      if (!player.is_host) return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
+      // On remet la room en 'waiting' et on nettoie l'état de jeu
+      await supabaseAdmin.from('rooms').update({ status: 'waiting', mode: 'classic' }).eq('id', player.room_id)
+      await supabaseAdmin.from('game_state').delete().eq('room_id', player.room_id)
       break
     }
 

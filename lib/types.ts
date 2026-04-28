@@ -1,4 +1,4 @@
-export type RoomStatus = 'waiting' | 'questions' | 'playing' | 'playing_tod' | 'finished'
+export type RoomStatus = 'waiting' | 'questions' | 'playing' | 'playing_tod' | 'finished' | 'tod_finished'
 export type GamePhase = 'answering' | 'guessing' | 'validating' | 'reveal'
 
 export interface Room {
@@ -44,5 +44,7 @@ export interface GameState {
   current_subject_id: string | null
   current_question_idx: number
   phase: GamePhase
+  player_sequence?: string[]
+  total_rounds?: number
   updated_at: string
 }
