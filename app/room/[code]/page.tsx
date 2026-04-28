@@ -21,6 +21,7 @@ export default function LobbyPage() {
   const [isTod, setIsTod] = useState(false)
   const [todDifficulty, setTodDifficulty] = useState('mixte')
   const wasKickedRef = useRef(false)
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
 
   async function copyCode() {
     await navigator.clipboard.writeText(code)
@@ -57,16 +58,15 @@ export default function LobbyPage() {
 
       supabase.getChannels().filter(c => c.topic === `realtime:lobby_${code}`).forEach(c => supabase.removeChannel(c))
       channel = supabase.channel(`lobby_${code}`)
+        .on('broadcast', { event: 'kick' }, ({ payload }) => {
+          if (payload?.playerId !== id) return
+          wasKickedRef.current = true
+          sessionStorage.clear()
+          sessionStorage.setItem('kicked_message', 'Vous avez été retiré du salon.')
+          window.location.href = '/'
+        })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, async (payload) => {
           if ((payload as any).eventType === 'DELETE') {
-            const deletedId = (payload.old as any).id
-            if (deletedId === id) {
-              wasKickedRef.current = true
-              sessionStorage.clear()
-              sessionStorage.setItem('kicked_message', 'Vous avez été retiré du salon.')
-              router.push('/')
-              return
-            }
             const { data: p } = await supabase.from('players').select().eq('room_id', roomData.id).order('created_at')
             setPlayers(p ?? [])
             return
@@ -85,6 +85,7 @@ export default function LobbyPage() {
           if (updated.status === 'finished') { gameStarted = true; router.push(`/room/${code}/results`) }
         })
         .subscribe()
+      channelRef.current = channel
     }
     init()
 
@@ -103,6 +104,11 @@ export default function LobbyPage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'kick_player', playerId: myId, token: myToken, targetId }),
+    })
+    channelRef.current?.send({
+      type: 'broadcast',
+      event: 'kick',
+      payload: { playerId: targetId },
     })
   }
 
