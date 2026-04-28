@@ -1,4 +1,5 @@
 'use client'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { FloatingShapes, T } from '@/components/ui'
@@ -40,6 +41,12 @@ const CARDS = [
 
 export default function HubPage() {
   const router = useRouter()
+  const [kickedMsg, setKickedMsg] = useState('')
+
+  useEffect(() => {
+    const msg = sessionStorage.getItem('kicked_message')
+    if (msg) { setKickedMsg(msg); sessionStorage.removeItem('kicked_message') }
+  }, [])
 
   return (
     <div style={{
@@ -51,6 +58,19 @@ export default function HubPage() {
       <FloatingShapes density="sparse" />
 
       <div className="fade-up" style={{ width: '100%', maxWidth: 860, position: 'relative', zIndex: 3, display: 'flex', flexDirection: 'column', gap: '2.5vh' }}>
+
+        {kickedMsg && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+            style={{
+              background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)',
+              borderRadius: 14, padding: '12px 18px',
+              color: '#f87171', fontSize: 14, fontWeight: 600, textAlign: 'center',
+            }}
+          >
+            🚫 {kickedMsg}
+          </motion.div>
+        )}
 
         {/* Header */}
         <div style={{ textAlign: 'center' }}>

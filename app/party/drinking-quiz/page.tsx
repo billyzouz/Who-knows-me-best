@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Btn, GlassPanel, Inp, Label, T } from '@/components/ui'
@@ -23,6 +23,8 @@ export default function DrinkingQuizPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  useEffect(() => { sessionStorage.clear() }, [])
+
   async function createRoom() {
     if (!name.trim()) return
     setLoading(true); setError('')
@@ -40,7 +42,7 @@ export default function DrinkingQuizPage() {
     } catch (e: any) { setError(e.message); setLoading(false) }
   }
 
-  async function joinRoom() {
+  async function handleJoinSecure() {
     if (!name.trim() || !code.trim()) return
     setLoading(true); setError('')
     router.refresh()
@@ -159,10 +161,10 @@ export default function DrinkingQuizPage() {
                 </div>
                 <div>
                   <Label color={AMBER} style={{ marginBottom: 8, display: 'block' }}>Code du salon</Label>
-                  <Inp placeholder="AB12CD" value={code} onChange={e => { setCode(e.target.value.toUpperCase()); setError('') }} onKeyDown={e => e.key === 'Enter' && joinRoom()} mono maxLength={6} />
+                  <Inp placeholder="AB12CD" value={code} onChange={e => { setCode(e.target.value.toUpperCase()); setError('') }} onKeyDown={e => e.key === 'Enter' && handleJoinSecure()} mono maxLength={6} />
                 </div>
                 {error && <p style={{ color: '#f87171', fontSize: 13, margin: 0 }}>{error}</p>}
-                <Btn variant="yellow" onClick={joinRoom} disabled={loading || !name.trim() || code.length < 6}>{loading ? 'Connexion...' : 'Rejoindre →'}</Btn>
+                <Btn variant="yellow" onClick={handleJoinSecure} disabled={loading || !name.trim() || code.length < 6}>{loading ? 'Connexion...' : 'Rejoindre →'}</Btn>
               </div>
             </>
           )}

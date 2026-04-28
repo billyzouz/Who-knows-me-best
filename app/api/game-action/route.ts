@@ -182,6 +182,22 @@ export async function POST(req: Request) {
       break
     }
 
+    case 'kick_player': {
+      const { targetId } = params
+      if (!player.is_host) return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
+      if (!targetId || targetId === playerId) return NextResponse.json({ error: 'Cible invalide' }, { status: 400 })
+      const { data: target } = await supabaseAdmin.from('players').select('room_id').eq('id', targetId).single()
+      if (!target || target.room_id !== player.room_id) return NextResponse.json({ error: 'Joueur introuvable' }, { status: 404 })
+      await supabaseAdmin.from('players').delete().eq('id', targetId)
+      break
+    }
+
+    case 'leave_room': {
+      if (player.is_host) return NextResponse.json({ ok: true })
+      await supabaseAdmin.from('players').delete().eq('id', playerId).eq('room_id', player.room_id)
+      break
+    }
+
     case 'reset_tod_room': {
       if (!player.is_host) return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
       // On remet la room en 'waiting' et on nettoie l'état de jeu

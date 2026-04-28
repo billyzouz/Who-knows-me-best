@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { Player, Room } from '@/lib/types'
@@ -20,6 +20,7 @@ export default function LobbyPage() {
   const [isDrinking, setIsDrinking] = useState(false)
   const [isTod, setIsTod] = useState(false)
   const [todDifficulty, setTodDifficulty] = useState('mixte')
+  const wasKickedRef = useRef(false)
 
   async function copyCode() {
     await navigator.clipboard.writeText(code)
@@ -33,14 +34,16 @@ export default function LobbyPage() {
     setMyId(id)
     setMyToken(tok)
     let channel: ReturnType<typeof supabase.channel> | null = null
+    let iAmHost = false
+    let gameStarted = false
 
     async function init() {
       const { data: roomData } = await supabase.from('rooms').select().eq('code', code).single()
       if (!roomData) { router.push('/'); return }
-      if (roomData.status === 'questions') { router.push(`/room/${code}/questions`); return }
-      if (roomData.status === 'playing') { router.push(`/room/${code}/play`); return }
-      if (roomData.status === 'playing_tod' || roomData.status === 'tod_finished') { router.push(`/room/${code}/truth-or-dare`); return }
-      if (roomData.status === 'finished') { router.push(`/room/${code}/results`); return }
+      if (roomData.status === 'questions') { gameStarted = true; router.push(`/room/${code}/questions`); return }
+      if (roomData.status === 'playing') { gameStarted = true; router.push(`/room/${code}/play`); return }
+      if (roomData.status === 'playing_tod' || roomData.status === 'tod_finished') { gameStarted = true; router.push(`/room/${code}/truth-or-dare`); return }
+      if (roomData.status === 'finished') { gameStarted = true; router.push(`/room/${code}/results`); return }
       const drinking = roomData.mode === 'drinking'
       const tod = roomData.mode?.startsWith('tod')
       setIsDrinking(drinking)
@@ -49,11 +52,25 @@ export default function LobbyPage() {
       setRoom(roomData)
       const { data: p } = await supabase.from('players').select().eq('room_id', roomData.id).order('created_at')
       setPlayers(p ?? [])
+      iAmHost = (p ?? []).find(pl => pl.id === id)?.is_host ?? false
       setLoading(false)
 
       supabase.getChannels().filter(c => c.topic === `realtime:lobby_${code}`).forEach(c => supabase.removeChannel(c))
       channel = supabase.channel(`lobby_${code}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, async (payload) => {
+          if ((payload as any).eventType === 'DELETE') {
+            const deletedId = (payload.old as any).id
+            if (deletedId === id) {
+              wasKickedRef.current = true
+              sessionStorage.clear()
+              sessionStorage.setItem('kicked_message', 'Vous avez été retiré du salon.')
+              router.push('/')
+              return
+            }
+            const { data: p } = await supabase.from('players').select().eq('room_id', roomData.id).order('created_at')
+            setPlayers(p ?? [])
+            return
+          }
           const changed = payload.new as any
           if (changed?.room_id !== roomData.id) return
           const { data: p } = await supabase.from('players').select().eq('room_id', roomData.id).order('created_at')
@@ -62,17 +79,32 @@ export default function LobbyPage() {
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms' }, (payload) => {
           const updated = payload.new as Room
           if (updated.id !== roomData.id) return
-          if (updated.status === 'questions') router.push(`/room/${code}/questions`)
-          if (updated.status === 'playing') router.push(`/room/${code}/play`)
-          if (updated.status === 'playing_tod' || updated.status === 'tod_finished') router.push(`/room/${code}/truth-or-dare`)
-          if (updated.status === 'finished') router.push(`/room/${code}/results`)
+          if (updated.status === 'questions') { gameStarted = true; router.push(`/room/${code}/questions`) }
+          if (updated.status === 'playing') { gameStarted = true; router.push(`/room/${code}/play`) }
+          if (updated.status === 'playing_tod' || updated.status === 'tod_finished') { gameStarted = true; router.push(`/room/${code}/truth-or-dare`) }
+          if (updated.status === 'finished') { gameStarted = true; router.push(`/room/${code}/results`) }
         })
         .subscribe()
     }
     init()
 
-    return () => { if (channel) supabase.removeChannel(channel) }
+    return () => {
+      if (channel) supabase.removeChannel(channel)
+      if (!wasKickedRef.current && !gameStarted && !iAmHost && id && tok) {
+        const body = JSON.stringify({ action: 'leave_room', playerId: id, token: tok })
+        navigator.sendBeacon('/api/game-action', new Blob([body], { type: 'application/json' }))
+      }
+    }
   }, [code, router])
+
+  async function kickPlayer(targetId: string) {
+    if (!myId || !myToken) return
+    await fetch('/api/game-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'kick_player', playerId: myId, token: myToken, targetId }),
+    })
+  }
 
   async function startPhase() {
     if (!room || !myId || !myToken) return
@@ -200,6 +232,21 @@ export default function LobbyPage() {
                 </div>
                 {p.is_host && <span style={{ fontSize: 18 }}>👑</span>}
                 {p.id === myId && !p.is_host && <Badge color={accentColor}>toi</Badge>}
+                {isHost && p.id !== myId && (
+                  <motion.button
+                    onClick={() => kickPlayer(p.id)}
+                    whileTap={{ scale: 0.88 }}
+                    title="Exclure ce joueur"
+                    style={{
+                      background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)',
+                      color: '#f87171', borderRadius: 8, width: 28, height: 28,
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 13, fontFamily: 'inherit', flexShrink: 0, lineHeight: 1,
+                    }}
+                  >
+                    ✕
+                  </motion.button>
+                )}
               </div>
             ))}
             {/* Empty slot indicators (desktop only) */}

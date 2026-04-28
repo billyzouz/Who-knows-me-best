@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Btn, GlassPanel, Inp, Label, T } from '@/components/ui'
@@ -20,6 +20,8 @@ export default function TruthOrDarePage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  useEffect(() => { sessionStorage.clear() }, [])
+
   async function createRoom() {
     if (!name.trim()) return
     setLoading(true); setError('')
@@ -37,7 +39,7 @@ export default function TruthOrDarePage() {
     } catch (e: any) { setError(e.message); setLoading(false) }
   }
 
-  async function joinRoom() {
+  async function handleJoinSecure() {
     if (!name.trim() || !code.trim()) return
     setLoading(true); setError('')
     router.refresh()
@@ -151,10 +153,10 @@ export default function TruthOrDarePage() {
                 </div>
                 <div>
                   <Label color={CYAN} style={{ marginBottom: 8, display: 'block' }}>Code du salon</Label>
-                  <Inp placeholder="AB12CD" value={code} onChange={e => { setCode(e.target.value.toUpperCase()); setError('') }} onKeyDown={e => e.key === 'Enter' && joinRoom()} mono maxLength={6} />
+                  <Inp placeholder="AB12CD" value={code} onChange={e => { setCode(e.target.value.toUpperCase()); setError('') }} onKeyDown={e => e.key === 'Enter' && handleJoinSecure()} mono maxLength={6} />
                 </div>
                 {error && <p style={{ color: '#f87171', fontSize: 13, margin: 0 }}>{error}</p>}
-                <Btn onClick={joinRoom} disabled={loading || !name.trim() || code.length < 6} style={{ background: `linear-gradient(135deg, ${CYAN} 0%, #3b82f6 100%)` }}>{loading ? 'Connexion...' : 'Rejoindre →'}</Btn>
+                <Btn onClick={handleJoinSecure} disabled={loading || !name.trim() || code.length < 6} style={{ background: `linear-gradient(135deg, ${CYAN} 0%, #3b82f6 100%)` }}>{loading ? 'Connexion...' : 'Rejoindre →'}</Btn>
               </div>
             </>
           )}
