@@ -18,6 +18,8 @@ export default function LobbyPage() {
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
   const [isDrinking, setIsDrinking] = useState(false)
+  const [isTod, setIsTod] = useState(false)
+  const [todDifficulty, setTodDifficulty] = useState('mixte')
 
   async function copyCode() {
     await navigator.clipboard.writeText(code)
@@ -37,10 +39,13 @@ export default function LobbyPage() {
       if (!roomData) { router.push('/'); return }
       if (roomData.status === 'questions') { router.push(`/room/${code}/questions`); return }
       if (roomData.status === 'playing') { router.push(`/room/${code}/play`); return }
+      if (roomData.status === 'playing_tod') { router.push(`/room/${code}/truth-or-dare`); return }
       if (roomData.status === 'finished') { router.push(`/room/${code}/results`); return }
       const drinking = roomData.mode === 'drinking'
+      const tod = roomData.mode?.startsWith('tod')
       setIsDrinking(drinking)
-      sessionStorage.setItem(`mode_${code}`, drinking ? 'drinking' : 'classic')
+      setIsTod(tod)
+      sessionStorage.setItem(`mode_${code}`, drinking ? 'drinking' : (tod ? roomData.mode : 'classic'))
       setRoom(roomData)
       const { data: p } = await supabase.from('players').select().eq('room_id', roomData.id).order('created_at')
       setPlayers(p ?? [])
@@ -59,6 +64,7 @@ export default function LobbyPage() {
           if (updated.id !== roomData.id) return
           if (updated.status === 'questions') router.push(`/room/${code}/questions`)
           if (updated.status === 'playing') router.push(`/room/${code}/play`)
+          if (updated.status === 'playing_tod') router.push(`/room/${code}/truth-or-dare`)
           if (updated.status === 'finished') router.push(`/room/${code}/results`)
         })
         .subscribe()
@@ -68,13 +74,21 @@ export default function LobbyPage() {
     return () => { if (channel) supabase.removeChannel(channel) }
   }, [code, router])
 
-  async function startQuestionPhase() {
+  async function startPhase() {
     if (!room || !myId || !myToken) return
-    await fetch('/api/game-action', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'start_question_phase', playerId: myId, token: myToken }),
-    })
+    if (isTod) {
+      await fetch('/api/game-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'start_tod', playerId: myId, token: myToken, difficulty: todDifficulty }),
+      })
+    } else {
+      await fetch('/api/game-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'start_question_phase', playerId: myId, token: myToken }),
+      })
+    }
   }
 
   const myPlayer = players.find(p => p.id === myId)
@@ -110,7 +124,7 @@ export default function LobbyPage() {
         {/* LEFT / TOP: Code reveal */}
         <GlassPanel glow={accentColor} style={{ padding: 'clamp(28px, 4vw, 56px)', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
           <Sparkles count={18} />
-          <Label color={accentColor} style={{ marginBottom: 14 }}>{isDrinking ? '🍺 Salon Quiz à Boire' : 'Salon en attente'}</Label>
+          <Label color={accentColor} style={{ marginBottom: 14 }}>{isTod ? '🎲 Action ou Vérité' : (isDrinking ? '🍺 Salon Quiz à Boire' : 'Salon en attente')}</Label>
           <p style={{ color: T.muted, fontSize: 14, marginBottom: 32 }}>Partage ce code à tes potes</p>
 
           <div className="lobby-code-size" style={{
@@ -203,9 +217,32 @@ export default function LobbyPage() {
 
           <div style={{ marginTop: 20 }}>
             {isHost ? (
-              <Btn variant={isDrinking ? 'yellow' : 'primary'} onClick={startQuestionPhase} disabled={players.length < 2}>
-                {players.length < 2 ? 'En attente de joueurs...' : (isDrinking ? '🍺 Commencer la soirée !' : '🚀 Commencer la partie !')}
-              </Btn>
+              <>
+                <Btn variant={isTod ? undefined : (isDrinking ? 'yellow' : 'primary')} onClick={startPhase} disabled={players.length < 2} style={isTod ? { background: `linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)` } : undefined}>
+                  {players.length < 2 ? 'En attente de joueurs...' : (isTod ? '🎲 Lancer Action ou Vérité !' : (isDrinking ? '🍺 Commencer la soirée !' : '🚀 Commencer la partie !'))}
+                </Btn>
+                {isTod && (
+                  <div style={{ marginTop: 24 }}>
+                    <Label style={{ marginBottom: 8, display: 'block', textAlign: 'center' }}>Difficulté</Label>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+                      {['soft', 'medium', 'hard', 'mixte'].map(d => (
+                        <button
+                          key={d}
+                          onClick={() => setTodDifficulty(d)}
+                          style={{
+                            padding: '6px 14px', borderRadius: 100, border: `1px solid ${todDifficulty === d ? '#06b6d4' : 'rgba(255,255,255,0.1)'}`,
+                            background: todDifficulty === d ? 'rgba(6,182,212,0.15)' : 'transparent',
+                            color: todDifficulty === d ? '#06b6d4' : T.muted,
+                            cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'inherit', transition: 'all 0.2s'
+                          }}
+                        >
+                          {d.charAt(0).toUpperCase() + d.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             ) : (
               <p style={{ textAlign: 'center', color: T.muted, fontSize: 14 }}>
                 En attente que le host lance la partie...

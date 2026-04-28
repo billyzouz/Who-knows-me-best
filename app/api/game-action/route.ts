@@ -103,6 +103,62 @@ export async function POST(req: Request) {
       break
     }
 
+    case 'start_tod': {
+      const { difficulty = 'mixte' } = params
+      if (!player.is_host) return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
+      const { data: players } = await supabaseAdmin.from('players').select().eq('room_id', player.room_id).order('created_at')
+      if (!players || players.length < 2) return NextResponse.json({ error: 'Pas assez de joueurs' }, { status: 400 })
+      
+      // Création du game_state initial pour ToD
+      await supabaseAdmin.from('game_state').insert({ 
+        room_id: player.room_id, 
+        current_subject_id: players[0].id, 
+        current_question_idx: 0, 
+        phase: 'answering', 
+        updated_at: new Date().toISOString() 
+      })
+      await supabaseAdmin.from('rooms').update({ status: 'playing_tod', mode: `tod:${difficulty}` }).eq('id', player.room_id)
+      break
+    }
+
+    case 'tod_submit_choice': {
+      const { gameStateId, choiceId } = params
+      const { data: gs } = await supabaseAdmin.from('game_state').select('current_subject_id').eq('id', gameStateId).single()
+      if (!gs || gs.current_subject_id !== playerId) return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
+      
+      // Enregistre le choix dans guesses (question_id = gameStateId pour lier au tour)
+      await supabaseAdmin.from('guesses').upsert(
+        { question_id: gameStateId, player_id: playerId, guess: choiceId, is_correct: true },
+        { onConflict: 'question_id,player_id' }
+      )
+      await supabaseAdmin.from('game_state').update({ phase: 'reveal', updated_at: new Date().toISOString() }).eq('id', gameStateId)
+      break
+    }
+
+    case 'tod_pass_turn': {
+      const { gameStateId } = params
+      const { data: gs } = await supabaseAdmin.from('game_state').select().eq('id', gameStateId).single()
+      if (!gs) return NextResponse.json({ error: 'Partie introuvable' }, { status: 404 })
+      if (!player.is_host && gs.current_subject_id !== playerId) return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
+      
+      const { data: allPlayers } = await supabaseAdmin.from('players').select().eq('room_id', gs.room_id).order('created_at')
+      if (!allPlayers) return NextResponse.json({ error: 'Données manquantes' }, { status: 500 })
+      
+      const subjectIndex = allPlayers.findIndex((p: any) => p.id === gs.current_subject_id)
+      const nextSubjectIndex = (subjectIndex + 1) % allPlayers.length
+      
+      // On supprime l'ancien guess pour ce gameState pour faire place nette pour le prochain tour
+      await supabaseAdmin.from('guesses').delete().eq('question_id', gameStateId)
+      
+      await supabaseAdmin.from('game_state').update({ 
+        current_subject_id: allPlayers[nextSubjectIndex].id, 
+        current_question_idx: gs.current_question_idx + 1, 
+        phase: 'answering', 
+        updated_at: new Date().toISOString() 
+      }).eq('id', gameStateId)
+      break
+    }
+
     default:
       return NextResponse.json({ error: 'Action inconnue' }, { status: 400 })
   }
