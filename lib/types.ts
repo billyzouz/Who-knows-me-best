@@ -6,6 +6,7 @@ export interface Room {
   code: string
   host_id: string | null
   status: RoomStatus
+  mode: string
   created_at: string
 }
 

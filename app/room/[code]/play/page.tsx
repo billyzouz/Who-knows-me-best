@@ -83,7 +83,6 @@ export default function PlayPage() {
     const tok = sessionStorage.getItem(`token_${code}`)
     setMyId(id)
     setMyToken(tok)
-    setDrinkingMode(sessionStorage.getItem(`mode_${code}`) === 'drinking')
     let channel: ReturnType<typeof supabase.channel> | null = null
 
     async function init() {
@@ -91,6 +90,9 @@ export default function PlayPage() {
       if (!roomData) { router.push('/'); return }
       if (roomData.status === 'finished') { router.push(`/room/${code}/results`); return }
       if (roomData.status !== 'playing') { router.push(`/room/${code}`); return }
+      const drinking = roomData.mode === 'drinking'
+      setDrinkingMode(drinking)
+      sessionStorage.setItem(`mode_${code}`, drinking ? 'drinking' : 'classic')
       setRoom(roomData)
       const { data: p } = await supabase.from('players').select().eq('room_id', roomData.id).order('created_at')
       const { data: q } = await supabase.from('questions').select().eq('room_id', roomData.id).order('created_at')

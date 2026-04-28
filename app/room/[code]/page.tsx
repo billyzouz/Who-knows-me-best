@@ -30,7 +30,6 @@ export default function LobbyPage() {
     const tok = sessionStorage.getItem(`token_${code}`)
     setMyId(id)
     setMyToken(tok)
-    setIsDrinking(sessionStorage.getItem(`mode_${code}`) === 'drinking')
     let channel: ReturnType<typeof supabase.channel> | null = null
 
     async function init() {
@@ -39,6 +38,9 @@ export default function LobbyPage() {
       if (roomData.status === 'questions') { router.push(`/room/${code}/questions`); return }
       if (roomData.status === 'playing') { router.push(`/room/${code}/play`); return }
       if (roomData.status === 'finished') { router.push(`/room/${code}/results`); return }
+      const drinking = roomData.mode === 'drinking'
+      setIsDrinking(drinking)
+      sessionStorage.setItem(`mode_${code}`, drinking ? 'drinking' : 'classic')
       setRoom(roomData)
       const { data: p } = await supabase.from('players').select().eq('room_id', roomData.id).order('created_at')
       setPlayers(p ?? [])
@@ -57,6 +59,7 @@ export default function LobbyPage() {
           if (updated.id !== roomData.id) return
           if (updated.status === 'questions') router.push(`/room/${code}/questions`)
           if (updated.status === 'playing') router.push(`/room/${code}/play`)
+          if (updated.status === 'finished') router.push(`/room/${code}/results`)
         })
         .subscribe()
     }

@@ -96,17 +96,18 @@ export default function QuizPage() {
           </p>
         </div>
 
+        <motion.button
+            onClick={() => mode === 'home' ? router.push('/') : setMode('home')}
+            whileTap={{ scale: 0.96 }}
+            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.45)', fontWeight: 600, fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 20, display: 'block', fontFamily: 'inherit' }}
+          >
+            ← {mode === 'home' ? 'Accueil' : 'Retour'}
+          </motion.button>
+
         <GlassPanel glow={T.purple} style={{ padding: 'clamp(24px, 4vw, 48px)' }}>
 
           {mode === 'home' && (
             <>
-              <motion.button
-                onClick={() => router.push('/')}
-                whileTap={{ scale: 0.96 }}
-                style={{ background: 'none', border: 'none', color: T.muted, fontWeight: 600, fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 20, display: 'block', fontFamily: 'inherit' }}
-              >
-                ← Accueil
-              </motion.button>
               <Label style={{ marginBottom: 12 }}>Prêt à jouer ?</Label>
               <h2 className="desktop-only" style={{ fontWeight: 800, fontSize: 36, color: '#fff', marginBottom: 32, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
                 Lance la partie
@@ -125,7 +126,6 @@ export default function QuizPage() {
 
           {mode === 'create' && (
             <>
-              <button onClick={() => setMode('home')} style={{ background: 'none', border: 'none', color: T.purple, fontWeight: 600, fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 16, display: 'block', fontFamily: 'inherit' }}>← Retour</button>
               <h2 style={{ fontWeight: 800, fontSize: 24, color: '#fff', margin: '0 0 4px' }}>Créer un salon</h2>
               <p style={{ color: T.muted, fontSize: 14, margin: '0 0 20px' }}>Tu seras le host de la partie</p>
               <Label style={{ marginBottom: 8, display: 'block' }}>Ton prénom</Label>
@@ -139,7 +139,6 @@ export default function QuizPage() {
 
           {mode === 'join' && (
             <>
-              <button onClick={() => setMode('home')} style={{ background: 'none', border: 'none', color: T.purple, fontWeight: 600, fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 16, display: 'block', fontFamily: 'inherit' }}>← Retour</button>
               <h2 style={{ fontWeight: 800, fontSize: 24, color: '#fff', margin: '0 0 4px' }}>Rejoindre une partie</h2>
               <p style={{ color: T.muted, fontSize: 14, margin: '0 0 20px' }}>Demande le code à ton host</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

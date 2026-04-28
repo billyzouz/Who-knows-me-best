@@ -2,8 +2,8 @@
 import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 
-export const AVATAR_COLORS = ['#8b5cf6','#ec4899','#f59e0b','#10b981','#3b82f6','#f97316','#06b6d4','#a855f7']
-export const avatarColor = (i: number) => AVATAR_COLORS[i % AVATAR_COLORS.length]
+const AVATAR_COLORS = ['#8b5cf6','#ec4899','#f59e0b','#10b981','#3b82f6','#f97316','#06b6d4','#a855f7']
+const avatarColor = (i: number) => AVATAR_COLORS[i % AVATAR_COLORS.length]
 
 export const T = {
   bg:        '#06060f',

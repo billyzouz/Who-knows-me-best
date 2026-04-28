@@ -16,10 +16,12 @@ export default function ResultsPage() {
   const [isDrinking, setIsDrinking] = useState(false)
 
   useEffect(() => {
-    setIsDrinking(sessionStorage.getItem(`mode_${code}`) === 'drinking')
     async function init() {
       const { data: room } = await supabase.from('rooms').select().eq('code', code).single()
       if (!room) { router.push('/'); return }
+      const drinking = room.mode === 'drinking'
+      setIsDrinking(drinking)
+      sessionStorage.setItem(`mode_${code}`, drinking ? 'drinking' : 'classic')
       const { data: p } = await supabase.from('players').select().eq('room_id', room.id).order('score', { ascending: false })
       setPlayers(p ?? [])
       setLoading(false)
@@ -178,8 +180,8 @@ export default function ResultsPage() {
               {isDrinking ? 'Garde la même équipe, sortez les verres !' : 'Garde la même équipe ou recommence avec de nouveaux potes.'}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <Btn variant={isDrinking ? 'yellow' : 'pink'} onClick={() => router.push('/')}>{isDrinking ? '🍺 Rejouer' : '🎉 Rejouer'}</Btn>
-              <Btn variant="ghost" onClick={() => router.push('/')} style={{ fontSize: 14, padding: '12px 16px' }}>Nouveau salon</Btn>
+              <Btn variant={isDrinking ? 'yellow' : 'pink'} onClick={() => router.push(isDrinking ? '/party/drinking-quiz' : '/quiz')}>{isDrinking ? '🍺 Rejouer' : '🎉 Rejouer'}</Btn>
+              <Btn variant="ghost" onClick={() => router.push('/')} style={{ fontSize: 14, padding: '12px 16px' }}>Changer de jeu</Btn>
             </div>
           </GlassPanel>
 

@@ -28,7 +28,7 @@ export default function DrinkingQuizPage() {
     setLoading(true); setError('')
     try {
       const roomCode = generateCode()
-      const { data: room, error: roomErr } = await supabase.from('rooms').insert({ code: roomCode, status: 'waiting' }).select().single()
+      const { data: room, error: roomErr } = await supabase.from('rooms').insert({ code: roomCode, status: 'waiting', mode: 'drinking' }).select().single()
       if (roomErr) throw roomErr
       const { data: player, error: playerErr } = await supabase.from('players').insert({ room_id: room.id, name: name.trim(), is_host: true }).select().single()
       if (playerErr) throw playerErr
