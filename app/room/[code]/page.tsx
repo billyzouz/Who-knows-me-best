@@ -37,6 +37,7 @@ export default function LobbyPage() {
     let channel: ReturnType<typeof supabase.channel> | null = null
     let iAmHost = false
     let gameStarted = false
+    let initCompleted = false
 
     async function init() {
       const { data: roomData } = await supabase.from('rooms').select().eq('code', code).single()
@@ -54,6 +55,7 @@ export default function LobbyPage() {
       const { data: p } = await supabase.from('players').select().eq('room_id', roomData.id).order('created_at')
       setPlayers(p ?? [])
       iAmHost = (p ?? []).find(pl => pl.id === id)?.is_host ?? false
+      initCompleted = true
       setLoading(false)
 
       supabase.getChannels().filter(c => c.topic === `realtime:lobby_${code}`).forEach(c => supabase.removeChannel(c))
@@ -91,7 +93,7 @@ export default function LobbyPage() {
 
     return () => {
       if (channel) supabase.removeChannel(channel)
-      if (!wasKickedRef.current && !gameStarted && !iAmHost && id && tok) {
+      if (!wasKickedRef.current && !gameStarted && !iAmHost && initCompleted && id && tok) {
         const body = JSON.stringify({ action: 'leave_room', playerId: id, token: tok })
         navigator.sendBeacon('/api/game-action', new Blob([body], { type: 'application/json' }))
       }
