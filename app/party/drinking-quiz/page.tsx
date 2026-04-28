@@ -47,12 +47,13 @@ export default function DrinkingQuizPage() {
       const roomCode = code.trim().toUpperCase()
       const { data: room, error: roomErr } = await supabase.from('rooms').select().eq('code', roomCode).single()
       if (roomErr || !room) throw new Error('Salon introuvable')
+      if (room.mode !== 'drinking' && room.mode !== 'classic') throw new Error(`Ce code correspond à un salon "${room.mode ?? 'inconnu'}" — rejoins via le menu approprié.`)
       if (room.status !== 'waiting') throw new Error('Partie déjà commencée')
       const { data: player, error: playerErr } = await supabase.from('players').insert({ room_id: room.id, name: name.trim(), is_host: false }).select().single()
       if (playerErr) throw playerErr
       sessionStorage.setItem(`player_${roomCode}`, player.id)
       sessionStorage.setItem(`token_${roomCode}`, player.token)
-      sessionStorage.setItem(`mode_${roomCode}`, 'drinking')
+      sessionStorage.setItem(`mode_${roomCode}`, room.mode)
       router.push(`/room/${roomCode}`)
     } catch (e: any) { setError(e.message); setLoading(false) }
   }
@@ -152,7 +153,7 @@ export default function DrinkingQuizPage() {
                 </div>
                 <div>
                   <Label color={AMBER} style={{ marginBottom: 8, display: 'block' }}>Code du salon</Label>
-                  <Inp placeholder="AB12CD" value={code} onChange={e => setCode(e.target.value.toUpperCase())} onKeyDown={e => e.key === 'Enter' && joinRoom()} mono maxLength={6} />
+                  <Inp placeholder="AB12CD" value={code} onChange={e => { setCode(e.target.value.toUpperCase()); setError('') }} onKeyDown={e => e.key === 'Enter' && joinRoom()} mono maxLength={6} />
                 </div>
                 {error && <p style={{ color: '#f87171', fontSize: 13, margin: 0 }}>{error}</p>}
                 <Btn variant="yellow" onClick={joinRoom} disabled={loading || !name.trim() || code.length < 6}>{loading ? 'Connexion...' : 'Rejoindre →'}</Btn>
