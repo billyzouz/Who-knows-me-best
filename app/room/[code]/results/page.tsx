@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { Player } from '@/lib/types'
@@ -14,6 +14,13 @@ export default function ResultsPage() {
   const [players, setPlayers] = useState<Player[]>([])
   const [loading, setLoading] = useState(true)
   const [isDrinking, setIsDrinking] = useState(false)
+  const celebrationSound = useRef<HTMLAudioElement | null>(null)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      celebrationSound.current = new Audio('/sounds/celebration.mp3')
+    }
+  }, [])
 
   useEffect(() => {
     async function init() {
@@ -25,6 +32,12 @@ export default function ResultsPage() {
       const { data: p } = await supabase.from('players').select().eq('room_id', room.id).order('score', { ascending: false })
       setPlayers(p ?? [])
       setLoading(false)
+
+      // Déclencher le son de célébration une fois le chargement fini
+      if (celebrationSound.current) {
+        celebrationSound.current.currentTime = 0
+        celebrationSound.current.play().catch(() => {})
+      }
     }
     init()
   }, [code, router])

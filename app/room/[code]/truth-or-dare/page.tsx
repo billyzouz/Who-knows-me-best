@@ -30,24 +30,28 @@ export default function TruthOrDareGamePage() {
   }, [])
 
   const flipSound = useRef<HTMLAudioElement | null>(null)
+  const celebrationSound = useRef<HTMLAudioElement | null>(null)
   
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      // Préparez votre fichier son dans /public/sounds/flip.mp3
-      // Alternative libre de droits si le fichier n'existe pas :
-      // flipSound.current = new Audio('https://actions.google.com/sounds/v1/ui/mechanical_switch_1.ogg')
       flipSound.current = new Audio('/sounds/flip.mp3')
+      celebrationSound.current = new Audio('/sounds/celebration.mp3')
     }
   }, [])
 
   useEffect(() => {
     if (revealedChoice && flipSound.current) {
       flipSound.current.currentTime = 0
-      flipSound.current.play().catch(() => {
-        // Ignorer l'erreur si le navigateur bloque l'autoplay ou si le fichier est manquant
-      })
+      flipSound.current.play().catch(() => {})
     }
   }, [revealedChoice])
+
+  useEffect(() => {
+    if (room?.status === 'tod_finished' && celebrationSound.current) {
+      celebrationSound.current.currentTime = 0
+      celebrationSound.current.play().catch(() => {})
+    }
+  }, [room?.status])
 
   useEffect(() => {
     const id = sessionStorage.getItem(`player_${code}`)
