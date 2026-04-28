@@ -43,13 +43,17 @@ export default function DrinkingQuizPage() {
   async function joinRoom() {
     if (!name.trim() || !code.trim()) return
     setLoading(true); setError('')
+    router.refresh()
     try {
       const roomCode = code.trim().toUpperCase()
-      const { data: room, error: roomErr } = await supabase.from('rooms').select().eq('code', roomCode).single()
+      const { data: room, error: roomErr } = await supabase.from('rooms').select('id, code, status, mode, host_id, created_at').eq('code', roomCode).single()
       if (roomErr || !room) throw new Error('Salon introuvable')
       console.log('MODE DÉTECTÉ:', room.mode)
       const allowedModes = ['drinking', 'classic', null, '']
-      if (!allowedModes.includes(room.mode)) throw new Error(`Ce code correspond à un salon "${room.mode}" — rejoins via le menu approprié.`)
+      if (!allowedModes.includes(room.mode)) {
+        const friendlyMode = room.mode?.startsWith('tod') ? 'Action ou Vérité' : 'Quiz'
+        throw new Error(`Oups ! Ce code est pour un salon ${friendlyMode}. Utilise le bon menu pour rejoindre.`)
+      }
       if (room.status !== 'waiting') throw new Error('Partie déjà commencée')
       const { data: player, error: playerErr } = await supabase.from('players').insert({ room_id: room.id, name: name.trim(), is_host: false }).select().single()
       if (playerErr) throw playerErr
