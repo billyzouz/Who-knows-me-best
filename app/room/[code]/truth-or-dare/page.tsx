@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 import type { GameState, Guess, Player, Room } from '@/lib/types'
 import { Avatar, Btn, Confetti, FloatingShapes, GlassPanel, Label, Sparkles, T } from '@/components/ui'
 import { motion, AnimatePresence } from 'framer-motion'
-import { TOD_QUESTIONS, TODQuestion } from '@/constants/tod-questions'
+import { TOD_QUESTIONS } from '@/constants/tod-questions'
 
 const CYAN = '#06b6d4'
 const BLUE = '#3b82f6'

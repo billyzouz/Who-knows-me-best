@@ -35,9 +35,9 @@ const GAMES = [
     sub: 'Courage ou confessions.',
     gradient: 'linear-gradient(135deg, #7c3aed 0%, #ec4899 100%)',
     glow: 'rgba(124,58,237,0.5)',
-    badge: 'Bientôt',
-    badgeColor: '#f59e0b',
-    available: false,
+    badge: 'Nouveau',
+    badgeColor: '#06b6d4',
+    available: true,
   },
 ]
 

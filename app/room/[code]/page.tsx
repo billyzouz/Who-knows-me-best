@@ -39,7 +39,7 @@ export default function LobbyPage() {
       if (!roomData) { router.push('/'); return }
       if (roomData.status === 'questions') { router.push(`/room/${code}/questions`); return }
       if (roomData.status === 'playing') { router.push(`/room/${code}/play`); return }
-      if (roomData.status === 'playing_tod') { router.push(`/room/${code}/truth-or-dare`); return }
+      if (roomData.status === 'playing_tod' || roomData.status === 'tod_finished') { router.push(`/room/${code}/truth-or-dare`); return }
       if (roomData.status === 'finished') { router.push(`/room/${code}/results`); return }
       const drinking = roomData.mode === 'drinking'
       const tod = roomData.mode?.startsWith('tod')
@@ -64,7 +64,7 @@ export default function LobbyPage() {
           if (updated.id !== roomData.id) return
           if (updated.status === 'questions') router.push(`/room/${code}/questions`)
           if (updated.status === 'playing') router.push(`/room/${code}/play`)
-          if (updated.status === 'playing_tod') router.push(`/room/${code}/truth-or-dare`)
+          if (updated.status === 'playing_tod' || updated.status === 'tod_finished') router.push(`/room/${code}/truth-or-dare`)
           if (updated.status === 'finished') router.push(`/room/${code}/results`)
         })
         .subscribe()
