@@ -586,10 +586,10 @@ export default function PlayPage() {
                   </div>
                 </GlassPanel>
 
-                {(isHost || isSubject) ? (
+                {isSubject ? (
                   <Btn onClick={nextQuestion} disabled={actioning}>{actioning ? '...' : 'Suivant →'}</Btn>
                 ) : (
-                  <p style={{ textAlign: 'center', color: T.muted, fontSize: 14 }}>En attente de la suite...</p>
+                  <p style={{ textAlign: 'center', color: T.muted, fontSize: 14 }}>En attente du sujet...</p>
                 )}
               </>
             )}
