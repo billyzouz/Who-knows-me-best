@@ -162,7 +162,7 @@ export default function NeverHaveIEverPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <span style={{ fontSize: 20 }}>🍺</span>
                   <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', margin: 0, lineHeight: 1.5 }}>
-                    Tu l'as fait → tu bois. Tu ne l'as jamais fait → les autres boivent. {QUESTIONS_PER_GAME} cartes par partie.
+                    Tu l'as fait → tu bois. Tu ne l'as jamais fait → tu es innocent(e), tu ne bois pas. {QUESTIONS_PER_GAME} cartes par partie.
                   </p>
                 </div>
               </GlassPanel>
