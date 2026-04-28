@@ -100,15 +100,15 @@ export default function LobbyPage() {
 
   async function kickPlayer(targetId: string) {
     if (!myId || !myToken) return
-    await fetch('/api/game-action', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'kick_player', playerId: myId, token: myToken, targetId }),
-    })
     channelRef.current?.send({
       type: 'broadcast',
       event: 'kick',
       payload: { playerId: targetId },
+    })
+    fetch('/api/game-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'kick_player', playerId: myId, token: myToken, targetId }),
     })
   }
 
