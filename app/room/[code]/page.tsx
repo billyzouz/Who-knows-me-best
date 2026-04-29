@@ -218,7 +218,7 @@ export default function LobbyPage() {
         })
       }
       // Signal flash pour tout le monde
-      channel?.send({ type: 'broadcast', event: 'sync', payload: {} })
+      channelRef.current?.send({ type: 'broadcast', event: 'sync', payload: {} })
     } catch (err) {
       console.error("Lobby: Error starting phase", err)
       setLaunching(false)

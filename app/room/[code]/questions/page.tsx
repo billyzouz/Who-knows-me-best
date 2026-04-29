@@ -34,6 +34,7 @@ export default function QuestionsPage() {
   const [submitting, setSubmitting] = useState(false)
   const [isDrinking, setIsDrinking] = useState(false)
   const textInputRef = useRef<HTMLInputElement>(null)
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
 
   useEffect(() => {
     const id = sessionStorage.getItem(`player_${code}`)

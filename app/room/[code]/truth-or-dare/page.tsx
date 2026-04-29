@@ -33,6 +33,7 @@ export default function TruthOrDareGamePage() {
   const celebrationSound = useRef<HTMLAudioElement | null>(null)
   const lastRevealedId = useRef<string | null>(null)
   const lastStatus = useRef<string | null>(null)
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -68,7 +69,6 @@ export default function TruthOrDareGamePage() {
     setMyToken(tok)
     let pollInterval: NodeJS.Timeout
     let currentRoomId: string | null = null
-    let channel: ReturnType<typeof supabase.channel> | null = null
 
     const fetchData = async () => {
       if (!currentRoomId) return
@@ -126,7 +126,7 @@ export default function TruthOrDareGamePage() {
         await supabase.removeChannel(ch)
       }
 
-      channel = supabase.channel(channelName)
+      channelRef.current = supabase.channel(channelName)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, async (payload) => {
           // Détection d'expulsion
           if (payload.eventType === 'DELETE' && payload.old && (payload.old as any).id === id) {
@@ -175,7 +175,7 @@ export default function TruthOrDareGamePage() {
     }
     init()
 
-    return () => { if (channel) supabase.removeChannel(channel) }
+    return () => { if (channelRef.current) supabase.removeChannel(channelRef.current) }
   }, [code, router, loadChoice])
 
   const difficulty = room?.mode?.split(':')[1] || 'mixte'
@@ -190,7 +190,7 @@ export default function TruthOrDareGamePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'tod_submit_choice', playerId: myId, token: myToken, gameStateId: gameState.id, choiceType: type }),
       })
-      channel?.send({ type: 'broadcast', event: 'sync', payload: {} })
+      channelRef.current?.send({ type: 'broadcast', event: 'sync', payload: {} })
       
       setTimeout(() => {
         if (gameState?.phase === 'answering') {
@@ -212,7 +212,7 @@ export default function TruthOrDareGamePage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'tod_pass_turn', playerId: myId, token: myToken, gameStateId: gameState.id }),
     })
-    channel?.send({ type: 'broadcast', event: 'sync', payload: {} })
+    channelRef.current?.send({ type: 'broadcast', event: 'sync', payload: {} })
     setActioning(false)
   }
 
@@ -225,7 +225,7 @@ export default function TruthOrDareGamePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'reset_tod_room', playerId: myId, token: myToken, roomId: room.id }),
       })
-      channel?.send({ type: 'broadcast', event: 'sync', payload: {} })
+      channelRef.current?.send({ type: 'broadcast', event: 'sync', payload: {} })
     } catch (e) {
       console.error(e)
     } finally {

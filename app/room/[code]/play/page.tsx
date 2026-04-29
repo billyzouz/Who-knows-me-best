@@ -32,6 +32,7 @@ export default function PlayPage() {
   const gameStateRef = useRef<GameState | null>(null)
   const playersRef = useRef<Player[]>([])
   const questionsRef = useRef<Question[]>([])
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
 
   useEffect(() => { gameStateRef.current = gameState }, [gameState])
   useEffect(() => { playersRef.current = players }, [players])
@@ -85,7 +86,6 @@ export default function PlayPage() {
     setMyToken(tok)
     let pollInterval: NodeJS.Timeout
     let currentRoomId: string | null = null
-    let channel: ReturnType<typeof supabase.channel> | null = null
 
     const fetchData = async () => {
       if (!currentRoomId) return
@@ -96,7 +96,7 @@ export default function PlayPage() {
       // Polling de secours pour le statut de la room (Fin de partie ou retour Lobby)
       const { data: r } = await supabase.from('rooms').select('status').eq('id', currentRoomId).single()
       if (r) {
-        setRoom(r as any)
+        setRoom(prev => prev ? { ...prev, status: r.status } : null)
         if (r.status === 'finished') {
           router.push(`/room/${code}/results`)
           return
@@ -151,7 +151,7 @@ export default function PlayPage() {
         await supabase.removeChannel(ch)
       }
 
-      channel = supabase.channel(channelName)
+      channelRef.current = supabase.channel(channelName)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, async (payload) => {
           // Détection d'expulsion
           if (payload.eventType === 'DELETE' && payload.old && (payload.old as any).id === id) {
@@ -205,7 +205,7 @@ export default function PlayPage() {
     }
     init()
 
-    return () => { if (channel) supabase.removeChannel(channel) }
+    return () => { if (channelRef.current) supabase.removeChannel(channelRef.current) }
   }, [code, router, loadGuesses])
 
   function normalize(s: string) {
@@ -255,7 +255,7 @@ export default function PlayPage() {
       console.error('advance_to_guessing failed', res.status, body)
       alert(`Erreur ${res.status}: ${body.error ?? 'inconnue'}`)
     }
-    channel?.send({ type: 'broadcast', event: 'sync', payload: {} })
+    channelRef.current?.send({ type: 'broadcast', event: 'sync', payload: {} })
     setActioning(false)
   }
 
@@ -276,7 +276,7 @@ export default function PlayPage() {
       const filtered = prev.filter(g => g.player_id !== myId)
       return [...filtered, { id: 'optimistic', question_id: currentQ.id, player_id: myId, guess: myGuess.trim(), is_correct: false, created_at: '' }]
     })
-    channel?.send({ type: 'broadcast', event: 'sync', payload: {} })
+    channelRef.current?.send({ type: 'broadcast', event: 'sync', payload: {} })
     setSubmittingGuess(false)
   }
 
@@ -295,7 +295,7 @@ export default function PlayPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'start_validating', playerId: myId, token: myToken, gameStateId: gameState.id }),
     })
-    channel?.send({ type: 'broadcast', event: 'sync', payload: {} })
+    channelRef.current?.send({ type: 'broadcast', event: 'sync', payload: {} })
     setActioning(false)
   }
 
@@ -327,7 +327,7 @@ export default function PlayPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'next_question', playerId: myId, token: myToken, gameStateId: gameState.id }),
     })
-    channel?.send({ type: 'broadcast', event: 'sync', payload: {} })
+    channelRef.current?.send({ type: 'broadcast', event: 'sync', payload: {} })
     setActioning(false)
   }
 
