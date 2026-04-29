@@ -31,6 +31,8 @@ export default function TruthOrDareGamePage() {
 
   const flipSound = useRef<HTMLAudioElement | null>(null)
   const celebrationSound = useRef<HTMLAudioElement | null>(null)
+  const lastRevealedId = useRef<string | null>(null)
+  const lastStatus = useRef<string | null>(null)
   
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -40,16 +42,22 @@ export default function TruthOrDareGamePage() {
   }, [])
 
   useEffect(() => {
-    if (revealedChoice && flipSound.current) {
+    if (revealedChoice && revealedChoice.id !== lastRevealedId.current && flipSound.current) {
+      lastRevealedId.current = revealedChoice.id
       flipSound.current.currentTime = 0
       flipSound.current.play().catch(() => {})
+    } else if (!revealedChoice) {
+      lastRevealedId.current = null
     }
   }, [revealedChoice])
 
   useEffect(() => {
-    if (room?.status === 'tod_finished' && celebrationSound.current) {
+    if (room?.status === 'tod_finished' && room.status !== lastStatus.current && celebrationSound.current) {
+      lastStatus.current = room.status
       celebrationSound.current.currentTime = 0
       celebrationSound.current.play().catch(() => {})
+    } else if (room?.status !== 'tod_finished') {
+      lastStatus.current = room?.status || null
     }
   }, [room?.status])
 
