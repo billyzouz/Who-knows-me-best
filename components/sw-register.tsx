@@ -5,7 +5,12 @@ import { useEffect } from 'react'
 export default function SwRegister() {
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return
-    if (process.env.NODE_ENV !== 'production') return
+    if (process.env.NODE_ENV !== 'production') {
+      navigator.serviceWorker.getRegistrations().then((regs) => {
+        for (let reg of regs) reg.unregister()
+      })
+      return
+    }
 
     navigator.serviceWorker.register('/sw.js', { scope: '/' }).then((reg) => {
       // New SW waiting → reload as soon as it activates
