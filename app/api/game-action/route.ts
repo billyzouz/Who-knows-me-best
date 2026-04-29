@@ -37,6 +37,9 @@ export async function POST(req: Request) {
         const count = questions?.filter((q: any) => q.author_id === p.id).length ?? 0
         if (count < MIN_QUESTIONS) return NextResponse.json({ error: 'Pas assez de questions' }, { status: 400 })
       }
+      // Nettoyage de sécurité avant de créer l'état de jeu
+      await supabaseAdmin.from('game_state').delete().eq('room_id', player.room_id)
+
       await supabaseAdmin.from('game_state').insert({ room_id: player.room_id, current_subject_id: players[0].id, current_question_idx: 0, phase: 'answering', updated_at: new Date().toISOString() })
       await supabaseAdmin.from('rooms').update({ status: 'playing' }).eq('id', player.room_id)
       break
@@ -122,6 +125,9 @@ export async function POST(req: Request) {
         const j = Math.floor(Math.random() * (i + 1));
         [sequence[i], sequence[j]] = [sequence[j], sequence[i]]
       }
+
+      // On nettoie tout ancien état de jeu avant de commencer
+      await supabaseAdmin.from('game_state').delete().eq('room_id', player.room_id)
 
       // Création du game_state initial pour ToD avec la séquence mélangée
       await supabaseAdmin.from('game_state').insert({ 

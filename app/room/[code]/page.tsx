@@ -20,6 +20,7 @@ export default function LobbyPage() {
   const [isDrinking, setIsDrinking] = useState(false)
   const [isTod, setIsTod] = useState(false)
   const [todDifficulty, setTodDifficulty] = useState('mixte')
+  const [launching, setLaunching] = useState(false)
   const wasKickedRef = useRef(false)
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
 
@@ -184,19 +185,25 @@ export default function LobbyPage() {
   }
 
   async function startPhase() {
-    if (!room || !myId || !myToken) return
-    if (isTod) {
-      await fetch('/api/game-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'start_tod', playerId: myId, token: myToken, difficulty: todDifficulty }),
-      })
-    } else {
-      await fetch('/api/game-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'start_question_phase', playerId: myId, token: myToken }),
-      })
+    if (!room || !myId || !myToken || launching) return
+    setLaunching(true)
+    try {
+      if (isTod) {
+        await fetch('/api/game-action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'start_tod', playerId: myId, token: myToken, difficulty: todDifficulty }),
+        })
+      } else {
+        await fetch('/api/game-action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'start_question_phase', playerId: myId, token: myToken }),
+        })
+      }
+    } catch (err) {
+      console.error("Lobby: Error starting phase", err)
+      setLaunching(false)
     }
   }
 
@@ -226,7 +233,7 @@ export default function LobbyPage() {
           }}
         />
       )}
-      <FloatingShapes density="dense" />
+      <FloatingShapes density="sparse" />
 
       <div className="lobby-layout fade-up">
 
@@ -342,8 +349,13 @@ export default function LobbyPage() {
           <div style={{ marginTop: 20 }}>
             {isHost ? (
               <>
-                <Btn variant={isTod ? undefined : (isDrinking ? 'yellow' : 'primary')} onClick={startPhase} disabled={players.length < 2} style={isTod ? { background: `linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)` } : undefined}>
-                  {players.length < 2 ? 'En attente de joueurs...' : (isTod ? '🎲 Lancer Action ou Vérité !' : (isDrinking ? '🍺 Commencer la soirée !' : '🚀 Commencer la partie !'))}
+                <Btn 
+                  variant={isTod ? undefined : (isDrinking ? 'yellow' : 'primary')} 
+                  onClick={startPhase} 
+                  disabled={players.length < 2 || launching} 
+                  style={isTod ? { background: `linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)` } : undefined}
+                >
+                  {launching ? 'Chargement...' : (players.length < 2 ? 'En attente de joueurs...' : (isTod ? '🎲 Lancer Action ou Vérité !' : (isDrinking ? '🍺 Commencer la soirée !' : '🚀 Commencer la partie !')))}
                 </Btn>
                 {isTod && (
                   <div style={{ marginTop: 24 }}>
