@@ -32,6 +32,13 @@ export default function ResultsPage() {
       const { data: p } = await supabase.from('players').select().eq('room_id', currentRoomId).order('score', { ascending: false })
       const list = p ?? []
       setPlayers(list)
+
+      // Polling de secours pour le retour au Lobby
+      const { data: r } = await supabase.from('rooms').select('status').eq('id', currentRoomId).single()
+      if (r && r.status === 'waiting') {
+        router.push(`/room/${code}`)
+        return
+      }
       
       // Vérification d'expulsion par absence
       if (id && list.length > 0) {

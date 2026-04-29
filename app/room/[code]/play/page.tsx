@@ -93,6 +93,20 @@ export default function PlayPage() {
       const list = p ?? []
       setPlayers(list)
 
+      // Polling de secours pour le statut de la room (Fin de partie ou retour Lobby)
+      const { data: r } = await supabase.from('rooms').select('status').eq('id', currentRoomId).single()
+      if (r) {
+        setRoom(r as any)
+        if (r.status === 'finished') {
+          router.push(`/room/${code}/results`)
+          return
+        }
+        if (r.status === 'waiting') {
+          router.push(`/room/${code}`)
+          return
+        }
+      }
+
       // Vérification d'expulsion par absence
       if (id && list.length > 0) {
         if (!list.some(pl => pl.id === id)) {

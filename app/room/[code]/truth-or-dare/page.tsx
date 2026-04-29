@@ -76,6 +76,16 @@ export default function TruthOrDareGamePage() {
       const list = p ?? []
       setPlayers(list)
 
+      // Polling de secours pour le statut de la room (Fin de partie ou retour Lobby)
+      const { data: r } = await supabase.from('rooms').select('status').eq('id', currentRoomId).single()
+      if (r) {
+        setRoom(r as Room)
+        if ((r.status as string) === 'waiting') {
+          router.push(`/room/${code}`)
+          return
+        }
+      }
+
       // Vérification d'expulsion par absence
       if (id && list.length > 0) {
         if (!list.some(pl => pl.id === id)) {

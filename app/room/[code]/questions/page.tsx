@@ -49,6 +49,19 @@ export default function QuestionsPage() {
       const { data: p } = await supabase.from('players').select().eq('room_id', currentRoomId).order('created_at')
       const playersList = p ?? []
       setPlayers(playersList)
+
+      // Polling de secours pour le statut de la room (Lancement du jeu ou retour Lobby)
+      const { data: r } = await supabase.from('rooms').select('status').eq('id', currentRoomId).single()
+      if (r) {
+        if (r.status === 'playing') {
+          router.push(`/room/${code}/play`)
+          return
+        }
+        if (r.status === 'waiting') {
+          router.push(`/room/${code}`)
+          return
+        }
+      }
       const { data: q } = await supabase.from('questions').select().eq('room_id', currentRoomId)
       setAllQuestions(q ?? [])
       const myIdNow = sessionStorage.getItem(`player_${code}`)
