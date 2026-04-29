@@ -20,6 +20,7 @@ export default function TruthOrDareGamePage() {
   const [myToken, setMyToken] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [actioning, setActioning] = useState(false)
+  const [isResetting, setIsResetting] = useState(false)
   
   // Le choix révélé pour le tour en cours (stocké dans guesses)
   const [revealedChoice, setRevealedChoice] = useState<Guess | null>(null)
@@ -79,7 +80,7 @@ export default function TruthOrDareGamePage() {
       // Polling de secours pour le statut de la room (Fin de partie ou retour Lobby)
       const { data: r } = await supabase.from('rooms').select('status').eq('id', currentRoomId).single()
       if (r) {
-        setRoom(r as Room)
+        setRoom(prev => prev ? { ...prev, status: r.status } : null)
         if ((r.status as string) === 'waiting') {
           router.push(`/room/${code}`)
           return
@@ -219,19 +220,23 @@ export default function TruthOrDareGamePage() {
   async function resetRoom() {
     if (!myId || !myToken || !room || actioning) return
     setActioning(true)
+    setIsResetting(true)
     try {
       await fetch('/api/game-action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'reset_tod_room', playerId: myId, token: myToken, roomId: room.id }),
       })
-      channelRef.current?.send({ type: 'broadcast', event: 'sync', payload: {} })
+      router.push(`/room/${code}`)
     } catch (e) {
       console.error(e)
+      setIsResetting(false)
     } finally {
       setActioning(false)
     }
   }
+
+  if (isResetting || room?.status === 'waiting') return null
 
   if (loading || !gameState) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', color: T.muted }}>Chargement...</div>
