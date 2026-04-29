@@ -34,32 +34,55 @@ export default function LobbyPage() {
     const tok = sessionStorage.getItem(`token_${code}`)
     setMyId(id)
     setMyToken(tok)
-    let channel: ReturnType<typeof supabase.channel> | null = null
-    let iAmHost = false
     let gameStarted = false
-    let initCompleted = false
+    let pollInterval: NodeJS.Timeout
+    let currentRoomId: string | null = null
+
+    const fetchPlayers = async () => {
+      if (!currentRoomId) return
+      const { data: p } = await supabase.from('players').select().eq('room_id', currentRoomId).order('created_at')
+      setPlayers(p ?? [])
+    }
 
     async function init() {
-      const { data: roomData } = await supabase.from('rooms').select().eq('code', code).single()
-      if (!roomData) { router.push('/'); return }
-      if (roomData.status === 'questions') { gameStarted = true; router.push(`/room/${code}/questions`); return }
-      if (roomData.status === 'playing') { gameStarted = true; router.push(`/room/${code}/play`); return }
-      if (roomData.status === 'playing_tod' || roomData.status === 'tod_finished') { gameStarted = true; router.push(`/room/${code}/truth-or-dare`); return }
-      if (roomData.status === 'finished') { gameStarted = true; router.push(`/room/${code}/results`); return }
+      const { data: roomData, error: roomErr } = await supabase.from('rooms').select().eq('code', code).single()
+      if (roomErr || !roomData) { 
+        console.error("Lobby: Room not found", code)
+        router.push('/')
+        return 
+      }
+
+      // Check status and redirect if already playing
+      if (roomData.status !== 'waiting') {
+        gameStarted = true
+        if (roomData.status === 'questions') router.push(`/room/${code}/questions`)
+        else if (roomData.status === 'playing') router.push(`/room/${code}/play`)
+        else if (roomData.status === 'playing_tod' || roomData.status === 'tod_finished') router.push(`/room/${code}/truth-or-dare`)
+        else if (roomData.status === 'finished') router.push(`/room/${code}/results`)
+        return
+      }
+
       const drinking = roomData.mode === 'drinking'
       const tod = roomData.mode?.startsWith('tod')
       setIsDrinking(drinking)
       setIsTod(tod)
       sessionStorage.setItem(`mode_${code}`, drinking ? 'drinking' : (tod ? roomData.mode : 'classic'))
       setRoom(roomData)
-      const { data: p } = await supabase.from('players').select().eq('room_id', roomData.id).order('created_at')
-      setPlayers(p ?? [])
-      iAmHost = (p ?? []).find(pl => pl.id === id)?.is_host ?? false
-      initCompleted = true
+      currentRoomId = roomData.id
+
+      await fetchPlayers()
       setLoading(false)
 
-      supabase.getChannels().filter(c => c.topic === `realtime:lobby_${code}`).forEach(c => supabase.removeChannel(c))
-      channel = supabase.channel(`lobby_${code}`)
+      // Polling fallback every 5s
+      pollInterval = setInterval(fetchPlayers, 5000)
+
+      // Realtime setup
+      const channelName = `lobby_${code}`
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current)
+      }
+
+      const channel = supabase.channel(channelName)
         .on('broadcast', { event: 'kick' }, ({ payload }) => {
           if (!payload?.playerId || payload.playerId !== id) return
           wasKickedRef.current = true
@@ -68,31 +91,46 @@ export default function LobbyPage() {
           window.location.href = '/'
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, async (payload) => {
-          if ((payload as any).eventType === 'DELETE') {
-            const { data: p } = await supabase.from('players').select().eq('room_id', roomData.id).order('created_at')
-            setPlayers(p ?? [])
-            return
-          }
-          const changed = payload.new as any
-          if (changed?.room_id !== roomData.id) return
-          const { data: p } = await supabase.from('players').select().eq('room_id', roomData.id).order('created_at')
-          setPlayers(p ?? [])
+          console.log("Lobby: Players change detected", payload.eventType)
+          await fetchPlayers()
         })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms' }, (payload) => {
           const updated = payload.new as Room
           if (updated.id !== roomData.id) return
-          if (updated.status === 'questions') { gameStarted = true; router.push(`/room/${code}/questions`) }
-          if (updated.status === 'playing') { gameStarted = true; router.push(`/room/${code}/play`) }
-          if (updated.status === 'playing_tod' || updated.status === 'tod_finished') { gameStarted = true; router.push(`/room/${code}/truth-or-dare`) }
-          if (updated.status === 'finished') { gameStarted = true; router.push(`/room/${code}/results`) }
+          console.log("Lobby: Room status updated", updated.status)
+          if (updated.status !== 'waiting') {
+            gameStarted = true
+            if (updated.status === 'questions') router.push(`/room/${code}/questions`)
+            else if (updated.status === 'playing') router.push(`/room/${code}/play`)
+            else if (updated.status === 'playing_tod' || updated.status === 'tod_finished') router.push(`/room/${code}/truth-or-dare`)
+            else if (updated.status === 'finished') router.push(`/room/${code}/results`)
+          }
         })
-        .subscribe()
+        .subscribe((status) => {
+          console.log(`Lobby: Subscription status for ${channelName}:`, status)
+          if (status === 'SUBSCRIBED') {
+            fetchPlayers() // One last check when subscription is active
+          }
+        })
+
       channelRef.current = channel
     }
+
+    const handleFocus = () => {
+      console.log("Lobby: Window focused, refreshing players...")
+      fetchPlayers()
+    }
+    window.addEventListener('focus', handleFocus)
+
     init()
 
     return () => {
-      if (channel) supabase.removeChannel(channel)
+      if (pollInterval) clearInterval(pollInterval)
+      window.removeEventListener('focus', handleFocus)
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current)
+        channelRef.current = null
+      }
     }
   }, [code, router])
 
