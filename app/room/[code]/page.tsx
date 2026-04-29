@@ -100,8 +100,8 @@ export default function LobbyPage() {
       await fetchPlayers()
       setLoading(false)
 
-      // Polling fallback every 5s
-      pollInterval = setInterval(fetchPlayers, 5000)
+      // Fallback polling (2s au lieu de 5s pour plus de réactivité)
+      pollInterval = setInterval(fetchPlayers, 2000)
 
       // Realtime setup
       const channelName = `lobby_${code}`
@@ -150,6 +150,10 @@ export default function LobbyPage() {
             else if ((updated.status as string) === 'playing_tod' || (updated.status as string) === 'tod_finished') router.push(`/room/${code}/truth-or-dare`)
             else if (updated.status === 'finished') router.push(`/room/${code}/results`)
           }
+        })
+        .on('broadcast', { event: 'sync' }, () => {
+          console.log("Lobby: Sync broadcast received")
+          fetchPlayers()
         })
         .subscribe((status) => {
           console.log(`Lobby: Subscription status for ${channelName}:`, status)
@@ -213,6 +217,8 @@ export default function LobbyPage() {
           body: JSON.stringify({ action: 'start_question_phase', playerId: myId, token: myToken }),
         })
       }
+      // Signal flash pour tout le monde
+      channel?.send({ type: 'broadcast', event: 'sync', payload: {} })
     } catch (err) {
       console.error("Lobby: Error starting phase", err)
       setLaunching(false)

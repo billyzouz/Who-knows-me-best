@@ -69,8 +69,8 @@ export default function ResultsPage() {
         celebrationSound.current.play().catch(() => {})
       }
 
-      // Fallbacks
-      pollInterval = setInterval(fetchPlayers, 5000)
+      // Fallback polling (2s pour plus de réactivité)
+      pollInterval = setInterval(fetchPlayers, 2000)
 
       const channelName = `results_${code}`
       const existingChannels = supabase.getChannels().filter(c => c.topic === `realtime:${channelName}`)
@@ -88,6 +88,16 @@ export default function ResultsPage() {
             return
           }
           await fetchPlayers()
+        })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms' }, (payload) => {
+          const r = payload.new as Room
+          if (r.id === currentRoomId && (r.status as string) === 'waiting') {
+            router.push(`/room/${code}`)
+          }
+        })
+        .on('broadcast', { event: 'sync' }, () => {
+          console.log("Results: Sync broadcast received")
+          fetchPlayers()
         })
         .subscribe()
     }

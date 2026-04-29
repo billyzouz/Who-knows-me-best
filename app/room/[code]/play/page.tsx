@@ -140,8 +140,8 @@ export default function PlayPage() {
       await fetchData()
       setLoading(false)
 
-      // Fallbacks
-      pollInterval = setInterval(fetchData, 5000)
+      // Fallback polling (2s pour plus de réactivité)
+      pollInterval = setInterval(fetchData, 2000)
 
       supabase.getChannels().filter(c => c.topic === `realtime:play_${code}`).forEach(c => supabase.removeChannel(c))
       
@@ -197,6 +197,10 @@ export default function PlayPage() {
           if (r.id !== roomData.id) return
           if (r.status === 'finished') router.push(`/room/${code}/results`)
         })
+        .on('broadcast', { event: 'sync' }, () => {
+          console.log("Play: Sync broadcast received")
+          fetchData()
+        })
         .subscribe()
     }
     init()
@@ -251,6 +255,7 @@ export default function PlayPage() {
       console.error('advance_to_guessing failed', res.status, body)
       alert(`Erreur ${res.status}: ${body.error ?? 'inconnue'}`)
     }
+    channel?.send({ type: 'broadcast', event: 'sync', payload: {} })
     setActioning(false)
   }
 
@@ -271,6 +276,7 @@ export default function PlayPage() {
       const filtered = prev.filter(g => g.player_id !== myId)
       return [...filtered, { id: 'optimistic', question_id: currentQ.id, player_id: myId, guess: myGuess.trim(), is_correct: false, created_at: '' }]
     })
+    channel?.send({ type: 'broadcast', event: 'sync', payload: {} })
     setSubmittingGuess(false)
   }
 
@@ -289,6 +295,7 @@ export default function PlayPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'start_validating', playerId: myId, token: myToken, gameStateId: gameState.id }),
     })
+    channel?.send({ type: 'broadcast', event: 'sync', payload: {} })
     setActioning(false)
   }
 
@@ -320,6 +327,7 @@ export default function PlayPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'next_question', playerId: myId, token: myToken, gameStateId: gameState.id }),
     })
+    channel?.send({ type: 'broadcast', event: 'sync', payload: {} })
     setActioning(false)
   }
 

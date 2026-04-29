@@ -96,8 +96,8 @@ export default function QuestionsPage() {
       await fetchData()
       setLoading(false)
 
-      // Fallbacks
-      pollInterval = setInterval(fetchData, 5000)
+      // Fallback polling (2s pour plus de réactivité)
+      pollInterval = setInterval(fetchData, 2000)
 
       const channelName = `questions_${code}`
       const existingChannels = supabase.getChannels().filter(c => c.topic === `realtime:${channelName}`)
@@ -124,7 +124,12 @@ export default function QuestionsPage() {
           if (updated.id !== roomData.id) return
           if (updated.status === 'playing') router.push(`/room/${code}/play`)
         })
+        .on('broadcast', { event: 'sync' }, () => {
+          console.log("Questions: Sync broadcast received")
+          fetchData()
+        })
         .subscribe()
+      channelRef.current = channel
     }
 
     const handleFocus = () => fetchData()
@@ -160,11 +165,16 @@ export default function QuestionsPage() {
 
   async function startGame() {
     if (!room || !canStartGame || !myId || !myToken) return
-    await fetch('/api/game-action', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'start_game', playerId: myId, token: myToken }),
-    })
+    try {
+      await fetch('/api/game-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'start_game', playerId: myId, token: myToken }),
+      })
+      channelRef.current?.send({ type: 'broadcast', event: 'sync', payload: {} })
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   const myPlayer = players.find(p => p.id === myId)

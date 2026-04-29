@@ -115,8 +115,8 @@ export default function TruthOrDareGamePage() {
       await fetchData()
       setLoading(false)
 
-      // Fallbacks
-      pollInterval = setInterval(fetchData, 5000)
+      // Fallbacks plus fréquents (2s au lieu de 5s)
+      pollInterval = setInterval(fetchData, 2000)
 
       supabase.getChannels().filter(c => c.topic === `realtime:tod_${code}`).forEach(c => supabase.removeChannel(c))
       
@@ -167,6 +167,10 @@ export default function TruthOrDareGamePage() {
             }
           }
         })
+        .on('broadcast', { event: 'sync' }, () => {
+          console.log("ToD: Sync broadcast received")
+          fetchData()
+        })
         .subscribe()
     }
     init()
@@ -186,8 +190,8 @@ export default function TruthOrDareGamePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'tod_submit_choice', playerId: myId, token: myToken, gameStateId: gameState.id, choiceType: type }),
       })
+      channel?.send({ type: 'broadcast', event: 'sync', payload: {} })
       
-      // Sécurité : si Realtime est trop lent, on force un rafraîchissement manuel après 2.5s
       setTimeout(() => {
         if (gameState?.phase === 'answering') {
           loadChoice(gameState.id)
@@ -208,18 +212,25 @@ export default function TruthOrDareGamePage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'tod_pass_turn', playerId: myId, token: myToken, gameStateId: gameState.id }),
     })
+    channel?.send({ type: 'broadcast', event: 'sync', payload: {} })
     setActioning(false)
   }
 
   async function resetRoom() {
-    if (!myId || !myToken || actioning) return
+    if (!myId || !myToken || !room || actioning) return
     setActioning(true)
-    await fetch('/api/game-action', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'reset_tod_room', playerId: myId, token: myToken }),
-    })
-    setActioning(false)
+    try {
+      await fetch('/api/game-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reset_tod_room', playerId: myId, token: myToken, roomId: room.id }),
+      })
+      channel?.send({ type: 'broadcast', event: 'sync', payload: {} })
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setActioning(false)
+    }
   }
 
   if (loading || !gameState) return (
