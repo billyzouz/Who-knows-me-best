@@ -292,7 +292,7 @@ export default function TruthOrDareGamePage() {
             </div>
           </GlassPanel>
 
-          <AnimatePresence mode="wait">
+          <AnimatePresence>
             {gameState.phase === 'answering' ? (
               <motion.div
                 key="choosing"
@@ -313,14 +313,12 @@ export default function TruthOrDareGamePage() {
                         position: 'relative', opacity: actioning ? 0.8 : 1
                       }}
                     >
-                      {actioning ? (
-                        <div style={{ fontSize: 18, fontWeight: 800 }}>CHARGEMENT...</div>
-                      ) : (
-                        <>
-                          <span style={{ fontSize: 48 }}>🤫</span>
-                          <span style={{ fontSize: 24, fontWeight: 900, letterSpacing: '0.05em' }}>VÉRITÉ</span>
-                        </>
-                      )}
+                      <>
+                        <span style={{ fontSize: 48, opacity: actioning ? 0.5 : 1 }}>🤫</span>
+                        <span style={{ fontSize: 24, fontWeight: 900, letterSpacing: '0.05em', opacity: actioning ? 0.5 : 1 }}>
+                          {actioning ? '...' : 'VÉRITÉ'}
+                        </span>
+                      </>
                     </motion.button>
                     
                     <motion.button
@@ -335,14 +333,12 @@ export default function TruthOrDareGamePage() {
                         position: 'relative', opacity: actioning ? 0.8 : 1
                       }}
                     >
-                      {actioning ? (
-                        <div style={{ fontSize: 18, fontWeight: 800 }}>CHARGEMENT...</div>
-                      ) : (
-                        <>
-                          <span style={{ fontSize: 48 }}>🔥</span>
-                          <span style={{ fontSize: 24, fontWeight: 900, letterSpacing: '0.05em' }}>ACTION</span>
-                        </>
-                      )}
+                      <>
+                        <span style={{ fontSize: 48, opacity: actioning ? 0.5 : 1 }}>🔥</span>
+                        <span style={{ fontSize: 24, fontWeight: 900, letterSpacing: '0.05em', opacity: actioning ? 0.5 : 1 }}>
+                          {actioning ? '...' : 'ACTION'}
+                        </span>
+                      </>
                     </motion.button>
                   </div>
                 ) : (
