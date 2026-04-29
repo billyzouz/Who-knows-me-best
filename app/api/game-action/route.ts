@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { TOD_QUESTIONS } from '@/constants/tod-questions'
 
 export async function POST(req: Request) {
   const { action, playerId, token, ...params } = await req.json()
@@ -137,10 +138,18 @@ export async function POST(req: Request) {
     }
 
     case 'tod_submit_choice': {
-      const { gameStateId, choiceId } = params
+      const { gameStateId, choiceType } = params
       const { data: gs } = await supabaseAdmin.from('game_state').select('current_subject_id, room_id').eq('id', gameStateId).single()
       if (!gs || gs.current_subject_id !== playerId) return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
       
+      const { data: room } = await supabaseAdmin.from('rooms').select('mode').eq('id', gs.room_id).single()
+      const difficulty = room?.mode?.split(':')[1] || 'mixte'
+      
+      // Tirage d'une carte au hasard côté serveur
+      const options = TOD_QUESTIONS.filter(q => (difficulty === 'mixte' || q.level === difficulty) && q.type === choiceType)
+      const choice = options[Math.floor(Math.random() * options.length)] || TOD_QUESTIONS.find(q => q.type === choiceType)
+      const choiceId = choice!.id
+
       // Crée une question factice pour satisfaire la clé étrangère de la table guesses
       await supabaseAdmin.from('questions').upsert({
         id: gameStateId,

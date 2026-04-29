@@ -115,24 +115,29 @@ export default function TruthOrDareGamePage() {
   }, [code, router, loadChoice])
 
   const difficulty = room?.mode?.split(':')[1] || 'mixte'
-  
-  // Filtrage local pour la performance
-  const filteredQuestions = TOD_QUESTIONS.filter(q => difficulty === 'mixte' || q.level === difficulty)
 
   async function selectCard(type: 'truth' | 'action') {
     if (!gameState || !myId || !myToken || actioning) return
     setActioning(true)
     
-    // Tirage d'une carte au hasard parmi le type choisi
-    const options = filteredQuestions.filter(q => q.type === type)
-    const choice = options[Math.floor(Math.random() * options.length)] || TOD_QUESTIONS.find(q => q.type === type)
-    
-    await fetch('/api/game-action', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'tod_submit_choice', playerId: myId, token: myToken, gameStateId: gameState.id, choiceId: choice!.id }),
-    })
-    setActioning(false)
+    try {
+      await fetch('/api/game-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'tod_submit_choice', playerId: myId, token: myToken, gameStateId: gameState.id, choiceType: type }),
+      })
+      
+      // Sécurité : si Realtime est trop lent, on force un rafraîchissement manuel après 2.5s
+      setTimeout(() => {
+        if (gameState?.phase === 'answering') {
+          loadChoice(gameState.id)
+        }
+      }, 2500)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setActioning(false)
+    }
   }
 
   async function nextTurn() {
@@ -254,11 +259,18 @@ export default function TruthOrDareGamePage() {
                         padding: '40px 20px', borderRadius: 24, border: 'none', cursor: 'pointer',
                         background: 'linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%)',
                         boxShadow: '0 8px 32px rgba(139, 92, 246, 0.4)', color: '#fff',
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+                        position: 'relative', opacity: actioning ? 0.8 : 1
                       }}
                     >
-                      <span style={{ fontSize: 48 }}>🤫</span>
-                      <span style={{ fontSize: 24, fontWeight: 900, letterSpacing: '0.05em' }}>VÉRITÉ</span>
+                      {actioning ? (
+                        <div style={{ fontSize: 18, fontWeight: 800 }}>CHARGEMENT...</div>
+                      ) : (
+                        <>
+                          <span style={{ fontSize: 48 }}>🤫</span>
+                          <span style={{ fontSize: 24, fontWeight: 900, letterSpacing: '0.05em' }}>VÉRITÉ</span>
+                        </>
+                      )}
                     </motion.button>
                     
                     <motion.button
@@ -269,11 +281,18 @@ export default function TruthOrDareGamePage() {
                         padding: '40px 20px', borderRadius: 24, border: 'none', cursor: 'pointer',
                         background: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)',
                         boxShadow: '0 8px 32px rgba(239, 68, 68, 0.4)', color: '#fff',
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+                        position: 'relative', opacity: actioning ? 0.8 : 1
                       }}
                     >
-                      <span style={{ fontSize: 48 }}>🔥</span>
-                      <span style={{ fontSize: 24, fontWeight: 900, letterSpacing: '0.05em' }}>ACTION</span>
+                      {actioning ? (
+                        <div style={{ fontSize: 18, fontWeight: 800 }}>CHARGEMENT...</div>
+                      ) : (
+                        <>
+                          <span style={{ fontSize: 48 }}>🔥</span>
+                          <span style={{ fontSize: 24, fontWeight: 900, letterSpacing: '0.05em' }}>ACTION</span>
+                        </>
+                      )}
                     </motion.button>
                   </div>
                 ) : (
