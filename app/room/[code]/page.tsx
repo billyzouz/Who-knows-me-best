@@ -72,11 +72,21 @@ export default function LobbyPage() {
     }
 
     async function init() {
+      // Pre-populate from sessionStorage to avoid loading flash on return from game
+      const savedMode = sessionStorage.getItem(`mode_${code}`)
+      if (savedMode && id) {
+        const drinking = savedMode === 'drinking'
+        const tod = savedMode?.startsWith('tod')
+        setIsDrinking(drinking)
+        setIsTod(tod)
+        setLoading(false)
+      }
+
       const { data: roomData, error: roomErr } = await supabase.from('rooms').select().eq('code', code).single()
-      if (roomErr || !roomData) { 
+      if (roomErr || !roomData) {
         console.error("Lobby: Room not found", code)
         router.push('/')
-        return 
+        return
       }
 
       // Check status and redirect if already playing
