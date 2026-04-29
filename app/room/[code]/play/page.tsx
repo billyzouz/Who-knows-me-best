@@ -105,7 +105,25 @@ export default function PlayPage() {
       setLoading(false)
 
       supabase.getChannels().filter(c => c.topic === `realtime:play_${code}`).forEach(c => supabase.removeChannel(c))
-      channel = supabase.channel(`play_${code}`)
+      
+      const channelName = `play_${code}`
+      const existingChannels = supabase.getChannels().filter(c => c.topic === `realtime:${channelName}`)
+      for (const ch of existingChannels) {
+        await supabase.removeChannel(ch)
+      }
+
+      channel = supabase.channel(channelName)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, async (payload) => {
+          // Détection d'expulsion
+          if (payload.eventType === 'DELETE' && payload.old && (payload.old as any).id === id) {
+            sessionStorage.clear()
+            sessionStorage.setItem('kicked_message', 'Vous avez été retiré du salon.')
+            window.location.href = '/'
+            return
+          }
+          const { data: p } = await supabase.from('players').select().eq('room_id', roomData.id).order('created_at')
+          setPlayers(p ?? [])
+        })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'game_state' }, async (payload) => {
           const changedId = (payload.new as any)?.id
           if (!changedId) return

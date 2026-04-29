@@ -23,23 +23,66 @@ export default function ResultsPage() {
   }, [])
 
   useEffect(() => {
+    const id = sessionStorage.getItem(`player_${code}`)
+    let pollInterval: NodeJS.Timeout
+    let currentRoomId: string | null = null
+
+    const fetchPlayers = async () => {
+      if (!currentRoomId) return
+      const { data: p } = await supabase.from('players').select().eq('room_id', currentRoomId).order('score', { ascending: false })
+      setPlayers(p ?? [])
+    }
+
     async function init() {
-      const { data: room } = await supabase.from('rooms').select().eq('code', code).single()
-      if (!room) { router.push('/'); return }
+      const { data: room, error: roomErr } = await supabase.from('rooms').select().eq('code', code).single()
+      if (roomErr || !room) { router.push('/'); return }
+      
       const drinking = room.mode === 'drinking'
       setIsDrinking(drinking)
       sessionStorage.setItem(`mode_${code}`, drinking ? 'drinking' : 'classic')
-      const { data: p } = await supabase.from('players').select().eq('room_id', room.id).order('score', { ascending: false })
-      setPlayers(p ?? [])
+      currentRoomId = room.id
+      
+      await fetchPlayers()
       setLoading(false)
 
-      // Déclencher le son de célébration une fois le chargement fini
+      // Celebration sound
       if (celebrationSound.current) {
         celebrationSound.current.currentTime = 0
         celebrationSound.current.play().catch(() => {})
       }
+
+      // Fallbacks
+      pollInterval = setInterval(fetchPlayers, 5000)
+
+      const channelName = `results_${code}`
+      const existingChannels = supabase.getChannels().filter(c => c.topic === `realtime:${channelName}`)
+      for (const ch of existingChannels) {
+        await supabase.removeChannel(ch)
+      }
+
+      const channel = supabase.channel(channelName)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, async (payload) => {
+          // Détection d'expulsion
+          if (payload.eventType === 'DELETE' && payload.old && (payload.old as any).id === id) {
+            sessionStorage.clear()
+            sessionStorage.setItem('kicked_message', 'Vous avez été retiré du salon.')
+            window.location.href = '/'
+            return
+          }
+          await fetchPlayers()
+        })
+        .subscribe()
     }
+
+    const handleFocus = () => fetchPlayers()
+    window.addEventListener('focus', handleFocus)
+    
     init()
+    
+    return () => {
+      if (pollInterval) clearInterval(pollInterval)
+      window.removeEventListener('focus', handleFocus)
+    }
   }, [code, router])
 
   if (loading) return (

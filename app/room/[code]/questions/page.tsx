@@ -40,33 +40,56 @@ export default function QuestionsPage() {
     const tok = sessionStorage.getItem(`token_${code}`)
     setMyId(id)
     setMyToken(tok)
-    let channel: ReturnType<typeof supabase.channel> | null = null
+    let gameStarted = false
+    let pollInterval: NodeJS.Timeout
+    let currentRoomId: string | null = null
+
+    const fetchData = async () => {
+      if (!currentRoomId) return
+      const { data: p } = await supabase.from('players').select().eq('room_id', currentRoomId).order('created_at')
+      setPlayers(p ?? [])
+      const { data: q } = await supabase.from('questions').select().eq('room_id', currentRoomId)
+      setAllQuestions(q ?? [])
+      const myIdNow = sessionStorage.getItem(`player_${code}`)
+      if (myIdNow) setMyQuestions((q ?? []).filter((x: Question) => x.author_id === myIdNow))
+    }
 
     async function init() {
-      const { data: roomData } = await supabase.from('rooms').select().eq('code', code).single()
-      if (!roomData) { router.push('/'); return }
+      const { data: roomData, error: roomErr } = await supabase.from('rooms').select().eq('code', code).single()
+      if (roomErr || !roomData) { router.push('/'); return }
       if (roomData.status === 'playing') { router.push(`/room/${code}/play`); return }
       if (roomData.status === 'finished') { router.push(`/room/${code}/results`); return }
       const drinking = roomData.mode === 'drinking'
       setIsDrinking(drinking)
       sessionStorage.setItem(`mode_${code}`, drinking ? 'drinking' : 'classic')
       setRoom(roomData)
-      const { data: p } = await supabase.from('players').select().eq('room_id', roomData.id).order('created_at')
-      setPlayers(p ?? [])
-      const { data: q } = await supabase.from('questions').select().eq('room_id', roomData.id)
-      setAllQuestions(q ?? [])
-      if (id) setMyQuestions((q ?? []).filter((x: Question) => x.author_id === id))
+      currentRoomId = roomData.id
+
+      await fetchData()
       setLoading(false)
 
-      supabase.getChannels().filter(c => c.topic === `realtime:questions_${code}`).forEach(c => supabase.removeChannel(c))
-      channel = supabase.channel(`questions_${code}`)
+      // Fallbacks
+      pollInterval = setInterval(fetchData, 5000)
+
+      const channelName = `questions_${code}`
+      const existingChannels = supabase.getChannels().filter(c => c.topic === `realtime:${channelName}`)
+      for (const ch of existingChannels) {
+        await supabase.removeChannel(ch)
+      }
+
+      const channel = supabase.channel(channelName)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, async (payload) => {
+          if (payload.eventType === 'DELETE' && payload.old && (payload.old as any).id === id) {
+            sessionStorage.clear()
+            sessionStorage.setItem('kicked_message', 'Vous avez été retiré du salon.')
+            window.location.href = '/'
+            return
+          }
+          await fetchData()
+        })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'questions' }, async (payload) => {
-          const changed = payload.new as any
-          if (changed?.room_id !== roomData.id) return
-          const { data: q } = await supabase.from('questions').select().eq('room_id', roomData.id)
-          setAllQuestions(q ?? [])
-          const myIdNow = sessionStorage.getItem(`player_${code}`)
-          if (myIdNow) setMyQuestions((q ?? []).filter((x: Question) => x.author_id === myIdNow))
+          console.log("Questions: change detected")
+          await fetchData()
         })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms' }, (payload) => {
           const updated = payload.new as Room
@@ -75,9 +98,16 @@ export default function QuestionsPage() {
         })
         .subscribe()
     }
+
+    const handleFocus = () => fetchData()
+    window.addEventListener('focus', handleFocus)
+
     init()
 
-    return () => { if (channel) supabase.removeChannel(channel) }
+    return () => {
+      if (pollInterval) clearInterval(pollInterval)
+      window.removeEventListener('focus', handleFocus)
+    }
   }, [code, router])
 
   async function addQuestion() {

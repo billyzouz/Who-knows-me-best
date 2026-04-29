@@ -99,6 +99,17 @@ export default function LobbyPage() {
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, async (payload) => {
           console.log("Lobby: Players change detected", payload.eventType)
+          
+          // Détection d'expulsion : si c'est MOI qui suis supprimé
+          if (payload.eventType === 'DELETE' && payload.old && (payload.old as any).id === id) {
+            console.log("Lobby: I have been removed from the room")
+            wasKickedRef.current = true
+            sessionStorage.clear()
+            sessionStorage.setItem('kicked_message', 'Vous avez été retiré du salon.')
+            window.location.href = '/'
+            return
+          }
+
           await fetchPlayers()
         })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms' }, (payload) => {
