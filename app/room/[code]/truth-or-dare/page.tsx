@@ -365,7 +365,7 @@ export default function TruthOrDareGamePage() {
                     {revealedQuestion?.type === 'truth' ? 'VÉRITÉ' : 'ACTION'}
                   </Label>
                   <h1 style={{ fontWeight: 900, fontSize: 'clamp(24px, 4vw, 42px)', color: '#fff', lineHeight: 1.3, letterSpacing: '-0.02em', margin: 0 }}>
-                    {revealedQuestion?.text || (room?.status === 'tod_finished' ? 'Partie terminée !' : 'Chargement...')}
+                    {revealedQuestion?.text || ((room?.status as string) === 'tod_finished' ? 'Partie terminée !' : 'Chargement...')}
                   </h1>
                   
                   <div style={{ marginTop: 40, padding: '12px 20px', background: 'rgba(239, 68, 68, 0.1)', border: '1px dashed rgba(239, 68, 68, 0.3)', borderRadius: 12, display: 'inline-block' }}>

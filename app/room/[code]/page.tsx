@@ -44,11 +44,11 @@ export default function LobbyPage() {
 
       // Récupération du statut de la room (Polling de secours pour le lancement)
       const { data: r } = await supabase.from('rooms').select('status').eq('id', currentRoomId).single()
-      if (r && r.status !== 'waiting') {
+      if (r && (r.status as string) !== 'waiting') {
         gameStarted = true
         if (r.status === 'questions') router.push(`/room/${code}/questions`)
         else if (r.status === 'playing') router.push(`/room/${code}/play`)
-        else if (r.status === 'playing_tod' || r.status === 'tod_finished') router.push(`/room/${code}/truth-or-dare`)
+        else if ((r.status as string) === 'playing_tod' || (r.status as string) === 'tod_finished') router.push(`/room/${code}/truth-or-dare`)
         else if (r.status === 'finished') router.push(`/room/${code}/results`)
         return
       }
@@ -143,11 +143,11 @@ export default function LobbyPage() {
           const updated = payload.new as Room
           if (updated.id !== roomData.id) return
           console.log("Lobby: Room status updated", updated.status)
-          if (updated.status !== 'waiting') {
+          if ((updated.status as string) !== 'waiting') {
             gameStarted = true
             if (updated.status === 'questions') router.push(`/room/${code}/questions`)
             else if (updated.status === 'playing') router.push(`/room/${code}/play`)
-            else if (updated.status === 'playing_tod' || updated.status === 'tod_finished') router.push(`/room/${code}/truth-or-dare`)
+            else if ((updated.status as string) === 'playing_tod' || (updated.status as string) === 'tod_finished') router.push(`/room/${code}/truth-or-dare`)
             else if (updated.status === 'finished') router.push(`/room/${code}/results`)
           }
         })
