@@ -78,8 +78,15 @@ export default function LobbyPage() {
 
       // Realtime setup
       const channelName = `lobby_${code}`
+      
+      // Nettoyage agressif des anciens canaux pour éviter l'erreur "after subscribe"
+      const existingChannels = supabase.getChannels().filter(c => c.topic === `realtime:${channelName}`)
+      for (const ch of existingChannels) {
+        await supabase.removeChannel(ch)
+      }
       if (channelRef.current) {
-        supabase.removeChannel(channelRef.current)
+        await supabase.removeChannel(channelRef.current)
+        channelRef.current = null
       }
 
       const channel = supabase.channel(channelName)
