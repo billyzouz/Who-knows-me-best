@@ -138,9 +138,18 @@ export async function POST(req: Request) {
 
     case 'tod_submit_choice': {
       const { gameStateId, choiceId } = params
-      const { data: gs } = await supabaseAdmin.from('game_state').select('current_subject_id').eq('id', gameStateId).single()
+      const { data: gs } = await supabaseAdmin.from('game_state').select('current_subject_id, room_id').eq('id', gameStateId).single()
       if (!gs || gs.current_subject_id !== playerId) return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
       
+      // Crée une question factice pour satisfaire la clé étrangère de la table guesses
+      await supabaseAdmin.from('questions').upsert({
+        id: gameStateId,
+        room_id: gs.room_id,
+        author_id: playerId,
+        text: 'TOD_CHOICE',
+        answer: choiceId
+      })
+
       // Enregistre le choix dans guesses (question_id = gameStateId pour lier au tour)
       await supabaseAdmin.from('guesses').upsert(
         { question_id: gameStateId, player_id: playerId, guess: choiceId, is_correct: true },
@@ -163,8 +172,9 @@ export async function POST(req: Request) {
       const totalRounds = gs.total_rounds || (allPlayers.length * 3)
       const sequence = gs.player_sequence || allPlayers.map((p: any) => p.id) // Fallback si pas de séquence (ne devrait pas arriver)
       
-      // On supprime l'ancien guess pour ce gameState pour faire place nette pour le prochain tour
+      // On supprime l'ancien guess et la question factice pour ce tour
       await supabaseAdmin.from('guesses').delete().eq('question_id', gameStateId)
+      await supabaseAdmin.from('questions').delete().eq('id', gameStateId)
       
       if (nextIdx >= totalRounds) {
         // Fin de la séquence, on termine la partie ToD
