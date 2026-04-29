@@ -47,11 +47,26 @@ export default function QuestionsPage() {
     const fetchData = async () => {
       if (!currentRoomId) return
       const { data: p } = await supabase.from('players').select().eq('room_id', currentRoomId).order('created_at')
-      setPlayers(p ?? [])
+      const playersList = p ?? []
+      setPlayers(playersList)
       const { data: q } = await supabase.from('questions').select().eq('room_id', currentRoomId)
       setAllQuestions(q ?? [])
       const myIdNow = sessionStorage.getItem(`player_${code}`)
-      if (myIdNow) setMyQuestions((q ?? []).filter((x: Question) => x.author_id === myIdNow))
+      if (myIdNow) {
+        setMyQuestions((q ?? []).filter((x: Question) => x.author_id === myIdNow))
+        
+        // Vérification d'expulsion par absence
+        if (playersList.length > 0) {
+          const stillHere = playersList.some(pl => pl.id === myIdNow)
+          if (!stillHere) {
+            console.log("Questions: My ID is no longer in the players list. Redirecting...")
+            sessionStorage.clear()
+            sessionStorage.setItem('kicked_message', 'Vous avez été retiré du salon.')
+            window.location.href = '/'
+            return
+          }
+        }
+      }
     }
 
     async function init() {

@@ -30,7 +30,18 @@ export default function ResultsPage() {
     const fetchPlayers = async () => {
       if (!currentRoomId) return
       const { data: p } = await supabase.from('players').select().eq('room_id', currentRoomId).order('score', { ascending: false })
-      setPlayers(p ?? [])
+      const list = p ?? []
+      setPlayers(list)
+      
+      // Vérification d'expulsion par absence
+      if (id && list.length > 0) {
+        if (!list.some(pl => pl.id === id)) {
+          sessionStorage.clear()
+          sessionStorage.setItem('kicked_message', 'Vous avez été retiré du salon.')
+          window.location.href = '/'
+          return
+        }
+      }
     }
 
     async function init() {

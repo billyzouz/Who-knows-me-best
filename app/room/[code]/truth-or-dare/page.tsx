@@ -66,7 +66,32 @@ export default function TruthOrDareGamePage() {
     const tok = sessionStorage.getItem(`token_${code}`)
     setMyId(id)
     setMyToken(tok)
+    let pollInterval: NodeJS.Timeout
+    let currentRoomId: string | null = null
     let channel: ReturnType<typeof supabase.channel> | null = null
+
+    const fetchData = async () => {
+      if (!currentRoomId) return
+      const { data: p } = await supabase.from('players').select().eq('room_id', currentRoomId).order('created_at')
+      const list = p ?? []
+      setPlayers(list)
+
+      // Vérification d'expulsion par absence
+      if (id && list.length > 0) {
+        if (!list.some(pl => pl.id === id)) {
+          sessionStorage.clear()
+          sessionStorage.setItem('kicked_message', 'Vous avez été retiré du salon.')
+          window.location.href = '/'
+          return
+        }
+      }
+
+      const { data: gs } = await supabase.from('game_state').select().eq('room_id', currentRoomId).single()
+      setGameState(gs)
+      if (gs && gs.phase === 'reveal') {
+        await loadChoice(gs.id)
+      }
+    }
 
     async function init() {
       const { data: roomData } = await supabase.from('rooms').select().eq('code', code).single()
@@ -75,14 +100,13 @@ export default function TruthOrDareGamePage() {
       if (roomData.status !== 'playing_tod' && roomData.status !== 'tod_finished') { router.push(`/room/${code}`); return }
       
       setRoom(roomData)
-      const { data: p } = await supabase.from('players').select().eq('room_id', roomData.id).order('created_at')
-      const { data: gs } = await supabase.from('game_state').select().eq('room_id', roomData.id).single()
-      setPlayers(p ?? []); setGameState(gs)
+      currentRoomId = roomData.id
       
-      if (gs && gs.phase === 'reveal') {
-        await loadChoice(gs.id)
-      }
+      await fetchData()
       setLoading(false)
+
+      // Fallbacks
+      pollInterval = setInterval(fetchData, 5000)
 
       supabase.getChannels().filter(c => c.topic === `realtime:tod_${code}`).forEach(c => supabase.removeChannel(c))
       

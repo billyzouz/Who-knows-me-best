@@ -41,7 +41,21 @@ export default function LobbyPage() {
     const fetchPlayers = async () => {
       if (!currentRoomId) return
       const { data: p } = await supabase.from('players').select().eq('room_id', currentRoomId).order('created_at')
-      setPlayers(p ?? [])
+      const playersList = p ?? []
+      setPlayers(playersList)
+
+      // Vérification d'expulsion par absence (méthode la plus fiable)
+      if (id && playersList.length > 0) {
+        const stillHere = playersList.some(pl => pl.id === id)
+        if (!stillHere) {
+          console.log("Lobby: My ID is no longer in the players list. Redirecting...")
+          wasKickedRef.current = true
+          sessionStorage.clear()
+          sessionStorage.setItem('kicked_message', 'Vous avez été retiré du salon.')
+          window.location.href = '/'
+          return
+        }
+      }
     }
 
     async function init() {
@@ -160,6 +174,8 @@ export default function LobbyPage() {
       body: JSON.stringify({ action: 'kick_player', playerId: myId, token: myToken, targetId }),
     })
     if (!res.ok) return
+    
+    // Broadcast avec configuration explicite pour éviter le warning
     channelRef.current?.send({
       type: 'broadcast',
       event: 'kick',
