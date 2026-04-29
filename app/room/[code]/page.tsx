@@ -40,7 +40,19 @@ export default function LobbyPage() {
     let currentRoomId: string | null = null
 
     const fetchPlayers = async () => {
-      if (!currentRoomId) return
+      if (!currentRoomId || gameStarted) return
+
+      // Récupération du statut de la room (Polling de secours pour le lancement)
+      const { data: r } = await supabase.from('rooms').select('status').eq('id', currentRoomId).single()
+      if (r && r.status !== 'waiting') {
+        gameStarted = true
+        if (r.status === 'questions') router.push(`/room/${code}/questions`)
+        else if (r.status === 'playing') router.push(`/room/${code}/play`)
+        else if (r.status === 'playing_tod' || r.status === 'tod_finished') router.push(`/room/${code}/truth-or-dare`)
+        else if (r.status === 'finished') router.push(`/room/${code}/results`)
+        return
+      }
+
       const { data: p } = await supabase.from('players').select().eq('room_id', currentRoomId).order('created_at')
       const playersList = p ?? []
       setPlayers(playersList)
