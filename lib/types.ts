@@ -1,4 +1,4 @@
-export type RoomStatus = 'waiting' | 'questions' | 'playing' | 'playing_tod' | 'finished' | 'tod_finished'
+export type RoomStatus = 'waiting' | 'questions' | 'playing' | 'playing_tod' | 'finished' | 'tod_finished' | 'playing_most_likely' | 'ml_finished'
 export type GamePhase = 'answering' | 'guessing' | 'validating' | 'reveal'
 
 export interface Room {

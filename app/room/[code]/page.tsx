@@ -20,6 +20,8 @@ export default function LobbyPage() {
   const [isDrinking, setIsDrinking] = useState(false)
   const [isTod, setIsTod] = useState(false)
   const [todDifficulty, setTodDifficulty] = useState('mixte')
+  const [isMostLikely, setIsMostLikely] = useState(false)
+  const [mlCategory, setMlCategory] = useState('mixte')
   const [launching, setLaunching] = useState(false)
   const wasKickedRef = useRef(false)
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
@@ -49,6 +51,7 @@ export default function LobbyPage() {
         if (r.status === 'questions') router.push(`/room/${code}/questions`)
         else if (r.status === 'playing') router.push(`/room/${code}/play`)
         else if ((r.status as string) === 'playing_tod' || (r.status as string) === 'tod_finished') router.push(`/room/${code}/truth-or-dare`)
+        else if ((r.status as string) === 'playing_most_likely' || (r.status as string) === 'ml_finished') router.push(`/room/${code}/most-likely`)
         else if (r.status === 'finished') router.push(`/room/${code}/results`)
         return
       }
@@ -77,8 +80,10 @@ export default function LobbyPage() {
       if (savedMode && id) {
         const drinking = savedMode === 'drinking'
         const tod = savedMode?.startsWith('tod')
+        const mostLikely = savedMode?.startsWith('most_likely')
         setIsDrinking(drinking)
         setIsTod(tod)
+        setIsMostLikely(!!mostLikely)
         setLoading(false)
       }
 
@@ -95,15 +100,22 @@ export default function LobbyPage() {
         if (roomData.status === 'questions') router.push(`/room/${code}/questions`)
         else if (roomData.status === 'playing') router.push(`/room/${code}/play`)
         else if (roomData.status === 'playing_tod' || roomData.status === 'tod_finished') router.push(`/room/${code}/truth-or-dare`)
+        else if (roomData.status === 'playing_most_likely' || roomData.status === 'ml_finished') router.push(`/room/${code}/most-likely`)
         else if (roomData.status === 'finished') router.push(`/room/${code}/results`)
         return
       }
 
       const drinking = roomData.mode === 'drinking'
       const tod = roomData.mode?.startsWith('tod')
+      const mostLikely = roomData.mode?.startsWith('most_likely')
       setIsDrinking(drinking)
       setIsTod(tod)
-      sessionStorage.setItem(`mode_${code}`, drinking ? 'drinking' : (tod ? roomData.mode : 'classic'))
+      setIsMostLikely(!!mostLikely)
+      if (mostLikely) {
+        const cat = roomData.mode?.split(':')[1] ?? 'mixte'
+        setMlCategory(cat)
+      }
+      sessionStorage.setItem(`mode_${code}`, drinking ? 'drinking' : (tod ? roomData.mode : (mostLikely ? roomData.mode : 'classic')))
       setRoom(roomData)
       currentRoomId = roomData.id
 
@@ -158,6 +170,7 @@ export default function LobbyPage() {
             if (updated.status === 'questions') router.push(`/room/${code}/questions`)
             else if (updated.status === 'playing') router.push(`/room/${code}/play`)
             else if ((updated.status as string) === 'playing_tod' || (updated.status as string) === 'tod_finished') router.push(`/room/${code}/truth-or-dare`)
+            else if ((updated.status as string) === 'playing_most_likely' || (updated.status as string) === 'ml_finished') router.push(`/room/${code}/most-likely`)
             else if (updated.status === 'finished') router.push(`/room/${code}/results`)
           }
         })
@@ -220,6 +233,12 @@ export default function LobbyPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'start_tod', playerId: myId, token: myToken, difficulty: todDifficulty }),
         })
+      } else if (isMostLikely) {
+        await fetch('/api/game-action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'start_most_likely', playerId: myId, token: myToken, category: mlCategory }),
+        })
       } else {
         await fetch('/api/game-action', {
           method: 'POST',
@@ -244,16 +263,21 @@ export default function LobbyPage() {
 
   const EMPTY_SLOTS = Math.max(0, 6 - players.length)
 
-  const accentColor = isDrinking ? AMBER : T.purple
+  const ORANGE = '#f97316'
+  const accentColor = isDrinking ? AMBER : isMostLikely ? ORANGE : T.purple
 
   return (
     <div className="lobby-page">
-      {isDrinking && (
+      {(isDrinking || isMostLikely) && (
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}
           style={{
             position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
-            background: `
+            background: isMostLikely ? `
+              radial-gradient(ellipse 800px 600px at 20% 30%, rgba(249,115,22,0.2), transparent 55%),
+              radial-gradient(ellipse 700px 500px at 80% 70%, rgba(236,72,153,0.18), transparent 55%),
+              radial-gradient(ellipse 500px 400px at 50% 90%, rgba(249,115,22,0.12), transparent 60%)
+            ` : `
               radial-gradient(ellipse 800px 600px at 20% 30%, rgba(245,158,11,0.18), transparent 55%),
               radial-gradient(ellipse 700px 500px at 80% 70%, rgba(249,115,22,0.15), transparent 55%),
               radial-gradient(ellipse 500px 400px at 50% 90%, rgba(251,146,60,0.1), transparent 60%)
@@ -268,7 +292,7 @@ export default function LobbyPage() {
         {/* LEFT / TOP: Code reveal */}
         <GlassPanel glow={accentColor} style={{ padding: 'clamp(28px, 4vw, 56px)', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
           <Sparkles count={18} />
-          <Label color={accentColor} style={{ marginBottom: 14 }}>{isTod ? '🎲 Action ou Vérité' : (isDrinking ? '🍺 Salon Quiz à Boire' : 'Salon en attente')}</Label>
+          <Label color={accentColor} style={{ marginBottom: 14 }}>{isMostLikely ? '🫵 Qui Pourrait...' : (isTod ? '🎲 Action ou Vérité' : (isDrinking ? '🍺 Salon Quiz à Boire' : 'Salon en attente'))}</Label>
           <p style={{ color: T.muted, fontSize: 14, marginBottom: 32 }}>Partage ce code à tes potes</p>
 
           <div className="lobby-code-size" style={{
@@ -377,14 +401,35 @@ export default function LobbyPage() {
           <div style={{ marginTop: 20 }}>
             {isHost ? (
               <>
-                <Btn 
-                  variant={isTod ? undefined : (isDrinking ? 'yellow' : 'primary')} 
-                  onClick={startPhase} 
-                  disabled={players.length < 2 || launching} 
-                  style={isTod ? { background: `linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)` } : undefined}
+                <Btn
+                  variant={isTod || isMostLikely ? undefined : (isDrinking ? 'yellow' : 'primary')}
+                  onClick={startPhase}
+                  disabled={players.length < 2 || launching}
+                  style={isTod ? { background: `linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)` } : isMostLikely ? { background: `linear-gradient(135deg, #f97316 0%, #ec4899 100%)` } : undefined}
                 >
-                  {launching ? 'Chargement...' : (players.length < 2 ? 'En attente de joueurs...' : (isTod ? '🎲 Lancer Action ou Vérité !' : (isDrinking ? '🍺 Commencer la soirée !' : '🚀 Commencer la partie !')))}
+                  {launching ? 'Chargement...' : (players.length < 2 ? 'En attente de joueurs...' : (isMostLikely ? '🫵 Lancer Qui Pourrait... !' : (isTod ? '🎲 Lancer Action ou Vérité !' : (isDrinking ? '🍺 Commencer la soirée !' : '🚀 Commencer la partie !'))))}
                 </Btn>
+                {isMostLikely && (
+                  <div style={{ marginTop: 24 }}>
+                    <Label style={{ marginBottom: 8, display: 'block', textAlign: 'center' }}>Catégorie</Label>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+                      {['soft', 'hard', 'mixte'].map(c => (
+                        <button
+                          key={c}
+                          onClick={() => setMlCategory(c)}
+                          style={{
+                            padding: '6px 14px', borderRadius: 100, border: `1px solid ${mlCategory === c ? '#f97316' : 'rgba(255,255,255,0.1)'}`,
+                            background: mlCategory === c ? 'rgba(249,115,22,0.15)' : 'transparent',
+                            color: mlCategory === c ? '#f97316' : AMBER,
+                            cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'inherit', transition: 'all 0.2s',
+                          }}
+                        >
+                          {c === 'soft' ? '😇 Soft' : c === 'hard' ? '🔥 Hard' : '🎲 Mixte'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {isTod && (
                   <div style={{ marginTop: 24 }}>
                     <Label style={{ marginBottom: 8, display: 'block', textAlign: 'center' }}>Difficulté</Label>

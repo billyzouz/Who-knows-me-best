@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { TOD_QUESTIONS } from '@/constants/tod-questions'
+import { ML_QUESTIONS } from '@/constants/most-likely-questions'
 
 export async function POST(req: Request) {
   const { action, playerId, token, ...params } = await req.json()
@@ -204,6 +205,114 @@ export async function POST(req: Request) {
           updated_at: new Date().toISOString() 
         }).eq('id', gameStateId)
       }
+      break
+    }
+
+    case 'start_most_likely': {
+      const { category = 'mixte' } = params
+      if (!player.is_host) return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
+      const { data: players } = await supabaseAdmin.from('players').select().eq('room_id', player.room_id).order('created_at')
+      if (!players || players.length < 2) return NextResponse.json({ error: 'Pas assez de joueurs' }, { status: 400 })
+
+      const options = ML_QUESTIONS.filter(q => category === 'mixte' || q.level === category)
+      // Shuffle question sequence server-side (no client randomness)
+      const sequence = options.map(q => q.id)
+      for (let i = sequence.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [sequence[i], sequence[j]] = [sequence[j], sequence[i]]
+      }
+
+      await supabaseAdmin.from('game_state').delete().eq('room_id', player.room_id)
+      const { data: gs } = await supabaseAdmin.from('game_state').insert({
+        room_id: player.room_id,
+        current_subject_id: null,
+        current_question_idx: 0,
+        phase: 'answering',
+        player_sequence: sequence,
+        total_rounds: sequence.length,
+        updated_at: new Date().toISOString(),
+      }).select().single()
+      if (!gs) return NextResponse.json({ error: 'Erreur création état' }, { status: 500 })
+
+      await supabaseAdmin.from('questions').upsert({
+        id: gs.id,
+        room_id: player.room_id,
+        author_id: playerId,
+        text: 'ML_QUESTION',
+        answer: sequence[0],
+      })
+      await supabaseAdmin.from('rooms').update({ status: 'playing_most_likely', mode: `most_likely:${category}` }).eq('id', player.room_id)
+      break
+    }
+
+    case 'submit_ml_vote': {
+      const { gameStateId, targetPlayerId } = params
+      if (!gameStateId || !targetPlayerId) return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 })
+      const { data: gs } = await supabaseAdmin.from('game_state').select('phase, room_id').eq('id', gameStateId).single()
+      if (!gs || gs.room_id !== player.room_id) return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
+      if (gs.phase !== 'answering') return NextResponse.json({ error: 'Phase incorrecte' }, { status: 400 })
+
+      const { data: target } = await supabaseAdmin.from('players').select('id').eq('id', targetPlayerId).eq('room_id', player.room_id).single()
+      if (!target) return NextResponse.json({ error: 'Cible introuvable' }, { status: 404 })
+
+      await supabaseAdmin.from('guesses').upsert(
+        { question_id: gameStateId, player_id: playerId, guess: targetPlayerId, is_correct: false },
+        { onConflict: 'question_id,player_id' }
+      )
+
+      // Reveal automatically once all players have voted
+      const { count: voteCount } = await supabaseAdmin.from('guesses').select('*', { count: 'exact', head: true }).eq('question_id', gameStateId)
+      const { count: playerCount } = await supabaseAdmin.from('players').select('*', { count: 'exact', head: true }).eq('room_id', player.room_id)
+      if (voteCount !== null && playerCount !== null && voteCount >= playerCount) {
+        await supabaseAdmin.from('game_state').update({ phase: 'reveal', updated_at: new Date().toISOString() }).eq('id', gameStateId)
+      }
+      break
+    }
+
+    case 'ml_next_round': {
+      const { gameStateId } = params
+      if (!player.is_host) return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
+      const { data: gs } = await supabaseAdmin.from('game_state').select().eq('id', gameStateId).single()
+      if (!gs) return NextResponse.json({ error: 'Partie introuvable' }, { status: 404 })
+      if (gs.room_id !== player.room_id) return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
+
+      const nextIdx = gs.current_question_idx + 1
+      const totalRounds = gs.total_rounds ?? ML_QUESTIONS.length
+
+      await supabaseAdmin.from('guesses').delete().eq('question_id', gameStateId)
+      await supabaseAdmin.from('questions').delete().eq('id', gameStateId)
+
+      if (nextIdx >= totalRounds) {
+        await supabaseAdmin.from('rooms').update({ status: 'ml_finished' }).eq('id', gs.room_id)
+      } else {
+        const sequence: string[] = gs.player_sequence ?? []
+        const nextQuestionId = sequence[nextIdx]
+        await supabaseAdmin.from('questions').upsert({
+          id: gameStateId,
+          room_id: gs.room_id,
+          author_id: playerId,
+          text: 'ML_QUESTION',
+          answer: nextQuestionId,
+        })
+        await supabaseAdmin.from('game_state').update({
+          current_question_idx: nextIdx,
+          phase: 'answering',
+          updated_at: new Date().toISOString(),
+        }).eq('id', gameStateId)
+      }
+      break
+    }
+
+    case 'reset_ml_room': {
+      if (!player.is_host) return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
+      const { data: currentGs } = await supabaseAdmin.from('game_state').select('id').eq('room_id', player.room_id).single()
+      if (currentGs) {
+        await supabaseAdmin.from('guesses').delete().eq('question_id', currentGs.id)
+        await supabaseAdmin.from('questions').delete().eq('id', currentGs.id)
+      }
+      const { data: currentRoom } = await supabaseAdmin.from('rooms').select('mode').eq('id', player.room_id).single()
+      await supabaseAdmin.from('rooms').update({ status: 'waiting', mode: currentRoom?.mode ?? 'classic' }).eq('id', player.room_id)
+      await supabaseAdmin.from('game_state').delete().eq('room_id', player.room_id)
       break
     }
 

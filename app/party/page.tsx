@@ -39,6 +39,18 @@ const GAMES = [
     badgeColor: '#06b6d4',
     available: true,
   },
+  {
+    href: '/party/most-likely',
+    emoji: '🫵',
+    title: 'Qui Pourrait...',
+    desc: 'Votez pour le coupable',
+    sub: 'Le plus de votes... boit !',
+    gradient: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)',
+    glow: 'rgba(249,115,22,0.5)',
+    badge: 'Nouveau',
+    badgeColor: '#f97316',
+    available: true,
+  },
 ]
 
 export default function PartyPage() {
