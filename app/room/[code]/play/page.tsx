@@ -107,8 +107,11 @@ export default function PlayPage() {
       supabase.getChannels().filter(c => c.topic === `realtime:play_${code}`).forEach(c => supabase.removeChannel(c))
       channel = supabase.channel(`play_${code}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'game_state' }, async (payload) => {
-          const gs = payload.new as GameState
-          if (gs.room_id !== roomData.id) return
+          const changedId = (payload.new as any)?.id
+          if (!changedId) return
+          const { data: gs } = await supabase.from('game_state').select().eq('id', changedId).single()
+          if (!gs || gs.room_id !== roomData.id) return
+          
           setGuesses([]); setMyGuess(''); setGameState(gs)
           const { data: p } = await supabase.from('players').select().eq('room_id', gs.room_id).order('created_at')
           const { data: q } = await supabase.from('questions').select().eq('room_id', gs.room_id).order('created_at')

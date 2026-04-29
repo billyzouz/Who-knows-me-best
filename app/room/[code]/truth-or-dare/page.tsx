@@ -79,8 +79,11 @@ export default function TruthOrDareGamePage() {
       supabase.getChannels().filter(c => c.topic === `realtime:tod_${code}`).forEach(c => supabase.removeChannel(c))
       channel = supabase.channel(`tod_${code}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'game_state' }, async (payload) => {
-          const gs = payload.new as GameState
-          if (gs.room_id !== roomData.id) return
+          const changedId = (payload.new as any)?.id
+          if (!changedId) return
+          const { data: gs } = await supabase.from('game_state').select().eq('id', changedId).single()
+          if (!gs || gs.room_id !== roomData.id) return
+          
           setGameState(gs)
           if (gs.phase === 'reveal') {
             await loadChoice(gs.id)
