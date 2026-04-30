@@ -42,14 +42,12 @@ export default function TruthOrDarePage() {
   async function handleJoinSecure() {
     if (!name.trim() || !code.trim()) return
     setLoading(true); setError('')
-    router.refresh()
     try {
       const roomCode = code.trim().toUpperCase()
       const { data: room, error: roomErr } = await supabase.from('rooms').select('id, code, status, mode, host_id, created_at').eq('code', roomCode).single()
       if (roomErr || !room) throw new Error('Salon introuvable')
-      console.log('MODE DÉTECTÉ:', room.mode)
       if (!room.mode?.startsWith('tod')) {
-        const friendlyMode = (room.mode === 'drinking') ? 'Quiz à Boire' : 'Quiz'
+        const friendlyMode = room.mode?.startsWith('most_likely') ? 'Qui Pourrait...' : (room.mode === 'drinking') ? 'Quiz à Boire' : 'Quiz'
         throw new Error(`Oups ! Ce code est pour un salon ${friendlyMode}. Utilise le bon menu pour rejoindre.`)
       }
       if (room.status !== 'waiting') throw new Error('Partie déjà commencée')

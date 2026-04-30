@@ -529,7 +529,7 @@ export default function MostLikelyPage() {
                   initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
                   style={{ width: '100%' }}
                 >
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12, marginBottom: 24 }}>
+                  <div className="ml-player-grid" style={{ marginBottom: 24 }}>
                     {players
                       .slice()
                       .sort((a, b) => (voteCounts[b.id] ?? 0) - (voteCounts[a.id] ?? 0))

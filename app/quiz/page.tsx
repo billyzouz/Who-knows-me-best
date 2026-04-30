@@ -40,6 +40,10 @@ export default function QuizPage() {
       const roomCode = code.trim().toUpperCase()
       const { data: room, error: roomErr } = await supabase.from('rooms').select().eq('code', roomCode).single()
       if (roomErr || !room) throw new Error('Salon introuvable')
+      if (room.mode && room.mode !== 'classic' && room.mode !== 'drinking') {
+        const friendlyMode = room.mode?.startsWith('tod') ? 'Action ou Vérité' : room.mode?.startsWith('most_likely') ? 'Qui Pourrait...' : room.mode
+        throw new Error(`Oups ! Ce code est pour un salon ${friendlyMode}. Utilise le bon menu pour rejoindre.`)
+      }
       if (room.status !== 'waiting') throw new Error('Partie déjà commencée')
       const { data: player, error: playerErr } = await supabase.from('players').insert({ room_id: room.id, name: name.trim(), is_host: false }).select().single()
       if (playerErr) throw playerErr

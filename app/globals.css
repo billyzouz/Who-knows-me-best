@@ -184,6 +184,8 @@ input:focus { border-color: #8b5cf6 !important; }
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  align-items: center;
+  width: 100%;
   gap: 12px;
   max-height: 45vh;
   overflow-y: auto;

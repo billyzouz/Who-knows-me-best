@@ -197,10 +197,7 @@ export default function PlayPage() {
           if (r.id !== roomData.id) return
           if (r.status === 'finished') router.push(`/room/${code}/results`)
         })
-        .on('broadcast', { event: 'sync' }, () => {
-          console.log("Play: Sync broadcast received")
-          fetchData()
-        })
+        .on('broadcast', { event: 'sync' }, () => { fetchData() })
         .subscribe()
     }
     init()
@@ -255,7 +252,7 @@ export default function PlayPage() {
       console.error('advance_to_guessing failed', res.status, body)
       alert(`Erreur ${res.status}: ${body.error ?? 'inconnue'}`)
     }
-    channelRef.current?.send({ type: 'broadcast', event: 'sync', payload: {} })
+    channelRef.current?.httpSend('sync', {})
     setActioning(false)
   }
 
@@ -276,7 +273,7 @@ export default function PlayPage() {
       const filtered = prev.filter(g => g.player_id !== myId)
       return [...filtered, { id: 'optimistic', question_id: currentQ.id, player_id: myId, guess: myGuess.trim(), is_correct: false, created_at: '' }]
     })
-    channelRef.current?.send({ type: 'broadcast', event: 'sync', payload: {} })
+    channelRef.current?.httpSend('sync', {})
     setSubmittingGuess(false)
   }
 
@@ -295,7 +292,7 @@ export default function PlayPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'start_validating', playerId: myId, token: myToken, gameStateId: gameState.id }),
     })
-    channelRef.current?.send({ type: 'broadcast', event: 'sync', payload: {} })
+    channelRef.current?.httpSend('sync', {})
     setActioning(false)
   }
 
@@ -327,7 +324,7 @@ export default function PlayPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'next_question', playerId: myId, token: myToken, gameStateId: gameState.id }),
     })
-    channelRef.current?.send({ type: 'broadcast', event: 'sync', payload: {} })
+    channelRef.current?.httpSend('sync', {})
     setActioning(false)
   }
 

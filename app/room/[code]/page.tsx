@@ -7,6 +7,7 @@ import { Avatar, Badge, Btn, FloatingShapes, GlassPanel, Label, PulsingDot, Spar
 import { motion } from 'framer-motion'
 
 const AMBER = '#f59e0b'
+const CYAN = '#06b6d4'
 
 export default function LobbyPage() {
   const { code } = useParams<{ code: string }>()
@@ -64,7 +65,6 @@ export default function LobbyPage() {
       if (id && playersList.length > 0) {
         const stillHere = playersList.some(pl => pl.id === id)
         if (!stillHere) {
-          console.log("Lobby: My ID is no longer in the players list. Redirecting...")
           wasKickedRef.current = true
           sessionStorage.clear()
           sessionStorage.setItem('kicked_message', 'Vous avez été retiré du salon.')
@@ -147,11 +147,7 @@ export default function LobbyPage() {
           window.location.href = '/'
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, async (payload) => {
-          console.log("Lobby: Players change detected", payload.eventType)
-          
-          // Détection d'expulsion : si c'est MOI qui suis supprimé
           if (payload.eventType === 'DELETE' && payload.old && (payload.old as any).id === id) {
-            console.log("Lobby: I have been removed from the room")
             wasKickedRef.current = true
             sessionStorage.clear()
             sessionStorage.setItem('kicked_message', 'Vous avez été retiré du salon.')
@@ -164,7 +160,6 @@ export default function LobbyPage() {
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms' }, (payload) => {
           const updated = payload.new as Room
           if (updated.id !== roomData.id) return
-          console.log("Lobby: Room status updated", updated.status)
           if ((updated.status as string) !== 'waiting') {
             gameStarted = true
             if (updated.status === 'questions') router.push(`/room/${code}/questions`)
@@ -175,23 +170,16 @@ export default function LobbyPage() {
           }
         })
         .on('broadcast', { event: 'sync' }, () => {
-          console.log("Lobby: Sync broadcast received")
           fetchPlayers()
         })
         .subscribe((status) => {
-          console.log(`Lobby: Subscription status for ${channelName}:`, status)
-          if (status === 'SUBSCRIBED') {
-            fetchPlayers() // One last check when subscription is active
-          }
+          if (status === 'SUBSCRIBED') fetchPlayers()
         })
 
       channelRef.current = channel
     }
 
-    const handleFocus = () => {
-      console.log("Lobby: Window focused, refreshing players...")
-      fetchPlayers()
-    }
+    const handleFocus = () => fetchPlayers()
     window.addEventListener('focus', handleFocus)
 
     init()
@@ -215,12 +203,7 @@ export default function LobbyPage() {
     })
     if (!res.ok) return
     
-    // Broadcast avec configuration explicite pour éviter le warning
-    channelRef.current?.send({
-      type: 'broadcast',
-      event: 'kick',
-      payload: { playerId: targetId },
-    })
+    channelRef.current?.httpSend('kick', { playerId: targetId })
   }
 
   async function startPhase() {
@@ -246,8 +229,7 @@ export default function LobbyPage() {
           body: JSON.stringify({ action: 'start_question_phase', playerId: myId, token: myToken }),
         })
       }
-      // Signal flash pour tout le monde
-      channelRef.current?.send({ type: 'broadcast', event: 'sync', payload: {} })
+      channelRef.current?.httpSend('sync', {})
     } catch (err) {
       console.error("Lobby: Error starting phase", err)
       setLaunching(false)
@@ -264,11 +246,11 @@ export default function LobbyPage() {
   const EMPTY_SLOTS = Math.max(0, 6 - players.length)
 
   const ORANGE = '#f97316'
-  const accentColor = isDrinking ? AMBER : isMostLikely ? ORANGE : T.purple
+  const accentColor = isDrinking ? AMBER : isMostLikely ? ORANGE : isTod ? CYAN : T.purple
 
   return (
     <div className="lobby-page">
-      {(isDrinking || isMostLikely) && (
+      {(isDrinking || isMostLikely || isTod) && (
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}
           style={{
@@ -277,6 +259,10 @@ export default function LobbyPage() {
               radial-gradient(ellipse 800px 600px at 20% 30%, rgba(249,115,22,0.2), transparent 55%),
               radial-gradient(ellipse 700px 500px at 80% 70%, rgba(236,72,153,0.18), transparent 55%),
               radial-gradient(ellipse 500px 400px at 50% 90%, rgba(249,115,22,0.12), transparent 60%)
+            ` : isTod ? `
+              radial-gradient(ellipse 800px 600px at 20% 30%, rgba(6,182,212,0.18), transparent 55%),
+              radial-gradient(ellipse 700px 500px at 80% 70%, rgba(59,130,246,0.15), transparent 55%),
+              radial-gradient(ellipse 500px 400px at 50% 90%, rgba(6,182,212,0.1), transparent 60%)
             ` : `
               radial-gradient(ellipse 800px 600px at 20% 30%, rgba(245,158,11,0.18), transparent 55%),
               radial-gradient(ellipse 700px 500px at 80% 70%, rgba(249,115,22,0.15), transparent 55%),

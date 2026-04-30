@@ -169,7 +169,6 @@ export default function TruthOrDareGamePage() {
           }
         })
         .on('broadcast', { event: 'sync' }, () => {
-          console.log("ToD: Sync broadcast received")
           fetchData()
         })
         .subscribe()

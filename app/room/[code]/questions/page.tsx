@@ -73,8 +73,7 @@ export default function QuestionsPage() {
         if (playersList.length > 0) {
           const stillHere = playersList.some(pl => pl.id === myIdNow)
           if (!stillHere) {
-            console.log("Questions: My ID is no longer in the players list. Redirecting...")
-            sessionStorage.clear()
+              sessionStorage.clear()
             sessionStorage.setItem('kicked_message', 'Vous avez été retiré du salon.')
             window.location.href = '/'
             return
@@ -117,7 +116,6 @@ export default function QuestionsPage() {
           await fetchData()
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'questions' }, async (payload) => {
-          console.log("Questions: change detected")
           await fetchData()
         })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms' }, (payload) => {
@@ -126,7 +124,6 @@ export default function QuestionsPage() {
           if (updated.status === 'playing') router.push(`/room/${code}/play`)
         })
         .on('broadcast', { event: 'sync' }, () => {
-          console.log("Questions: Sync broadcast received")
           fetchData()
         })
         .subscribe()
@@ -172,7 +169,7 @@ export default function QuestionsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'start_game', playerId: myId, token: myToken }),
       })
-      channelRef.current?.send({ type: 'broadcast', event: 'sync', payload: {} })
+      channelRef.current?.httpSend('sync', {})
     } catch (err) {
       console.error(err)
     }

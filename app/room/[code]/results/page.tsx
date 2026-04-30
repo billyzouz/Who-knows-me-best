@@ -96,7 +96,6 @@ export default function ResultsPage() {
           }
         })
         .on('broadcast', { event: 'sync' }, () => {
-          console.log("Results: Sync broadcast received")
           fetchPlayers()
         })
         .subscribe()
