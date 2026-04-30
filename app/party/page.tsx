@@ -41,7 +41,7 @@ const GAMES = [
   },
   {
     href: '/party/most-likely',
-    emoji: '🫵',
+    emoji: '☝️',
     title: 'Qui Pourrait...',
     desc: 'Votez pour le coupable',
     sub: 'Le plus de votes... boit !',

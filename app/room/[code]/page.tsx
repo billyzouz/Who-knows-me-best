@@ -292,7 +292,7 @@ export default function LobbyPage() {
         {/* LEFT / TOP: Code reveal */}
         <GlassPanel glow={accentColor} style={{ padding: 'clamp(28px, 4vw, 56px)', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
           <Sparkles count={18} />
-          <Label color={accentColor} style={{ marginBottom: 14 }}>{isMostLikely ? '🫵 Qui Pourrait...' : (isTod ? '🎲 Action ou Vérité' : (isDrinking ? '🍺 Salon Quiz à Boire' : 'Salon en attente'))}</Label>
+          <Label color={accentColor} style={{ marginBottom: 14 }}>{isMostLikely ? '☝️ Qui Pourrait...' : (isTod ? '🎲 Action ou Vérité' : (isDrinking ? '🍺 Salon Quiz à Boire' : 'Salon en attente'))}</Label>
           <p style={{ color: T.muted, fontSize: 14, marginBottom: 32 }}>Partage ce code à tes potes</p>
 
           <div className="lobby-code-size" style={{
@@ -407,7 +407,7 @@ export default function LobbyPage() {
                   disabled={players.length < 2 || launching}
                   style={isTod ? { background: `linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)` } : isMostLikely ? { background: `linear-gradient(135deg, #f97316 0%, #ec4899 100%)` } : undefined}
                 >
-                  {launching ? 'Chargement...' : (players.length < 2 ? 'En attente de joueurs...' : (isMostLikely ? '🫵 Lancer Qui Pourrait... !' : (isTod ? '🎲 Lancer Action ou Vérité !' : (isDrinking ? '🍺 Commencer la soirée !' : '🚀 Commencer la partie !'))))}
+                  {launching ? 'Chargement...' : (players.length < 2 ? 'En attente de joueurs...' : (isMostLikely ? '☝️ Lancer Qui Pourrait... !' : (isTod ? '🎲 Lancer Action ou Vérité !' : (isDrinking ? '🍺 Commencer la soirée !' : '🚀 Commencer la partie !'))))}
                 </Btn>
                 {isMostLikely && (
                   <div style={{ marginTop: 24 }}>

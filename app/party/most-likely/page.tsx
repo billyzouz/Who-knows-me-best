@@ -90,7 +90,11 @@ export default function MostLikelyPage() {
         </motion.button>
 
         <div style={{ textAlign: 'center', marginBottom: 'clamp(24px, 3vh, 40px)' }}>
-          <div className="wobble" style={{ fontSize: 'clamp(36px, 5vh, 52px)', display: 'inline-block', marginBottom: 10 }}>🫵</div>
+          <motion.div
+            animate={{ y: [0, -10, 0] }}
+            transition={{ repeat: Infinity, duration: 2.2, ease: 'easeInOut' }}
+            style={{ fontSize: 'clamp(36px, 5vh, 52px)', display: 'inline-block', marginBottom: 10 }}
+          >☝️</motion.div>
           <h1 style={{ fontWeight: 900, fontSize: 'clamp(24px, 4vh, 36px)', color: '#fff', margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
             Qui Pourrait...
           </h1>
@@ -107,7 +111,7 @@ export default function MostLikelyPage() {
                 <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: ORANGE, margin: '0 0 10px' }}>Règles</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {[
-                    ['🫵', 'Une question s\'affiche pour tout le groupe'],
+                    ['❓', 'Une question s\'affiche pour tout le groupe'],
                     ['🗳️', 'Chacun vote pour la personne qui correspond le plus'],
                     ['🏆', 'Celui qui a le plus de votes... boit !'],
                   ].map(([icon, text]) => (
@@ -120,7 +124,7 @@ export default function MostLikelyPage() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <Btn onClick={() => setMode('create')} style={{ background: `linear-gradient(135deg, ${ORANGE} 0%, #ec4899 100%)` }}>🫵 Créer un salon</Btn>
+                <Btn onClick={() => setMode('create')} style={{ background: `linear-gradient(135deg, ${ORANGE} 0%, #ec4899 100%)` }}>☝️ Créer un salon</Btn>
                 <Btn variant="ghost" onClick={() => setMode('join')}>Rejoindre une partie</Btn>
               </div>
             </>

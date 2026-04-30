@@ -355,7 +355,7 @@ export default function MostLikelyPage() {
         {/* Top bar */}
         <div className="fade-up" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Label color={ORANGE}>🫵 Qui Pourrait...</Label>
+            <Label color={ORANGE}>☝️ Qui Pourrait...</Label>
             <span style={{ fontSize: 13, color: T.muted, fontWeight: 600 }}>
               · {category.toUpperCase()}
             </span>
@@ -372,7 +372,7 @@ export default function MostLikelyPage() {
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 20, textAlign: 'center', overflowY: 'auto' }}>
             <Confetti count={48} />
             <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', bounce: 0.5 }}>
-              <span style={{ fontSize: 64 }}>🫵</span>
+              <span style={{ fontSize: 64 }}>☝️</span>
             </motion.div>
             <h1 style={{ fontWeight: 900, fontSize: 'clamp(28px, 4vw, 40px)', color: '#fff', margin: 0 }}>Fin de la partie !</h1>
             <p style={{ color: T.muted, fontSize: 15, maxWidth: 380, margin: '0 auto' }}>On sait maintenant qui est qui dans ce groupe 🔥</p>
@@ -448,7 +448,7 @@ export default function MostLikelyPage() {
             <GlassPanel glow={ORANGE} style={{ padding: '36px 28px', textAlign: 'center', width: '100%', position: 'relative', overflow: 'hidden' }}>
               <Sparkles count={12} />
               <Label color={ORANGE} style={{ marginBottom: 16 }}>
-                {currentQuestion?.level === 'hard' ? '🔥 HARD' : currentQuestion?.level === 'soft' ? '😇 SOFT' : '🫵 QUI POURRAIT...'}
+                {currentQuestion?.level === 'hard' ? '🔥 HARD' : currentQuestion?.level === 'soft' ? '😇 SOFT' : '☝️ QUI POURRAIT...'}
               </Label>
               <h1 style={{ fontWeight: 900, fontSize: 'clamp(22px, 3.5vw, 38px)', color: '#fff', lineHeight: 1.3, letterSpacing: '-0.02em', margin: 0 }}>
                 {currentQuestion?.text ?? 'Chargement...'}
