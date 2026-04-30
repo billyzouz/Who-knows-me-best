@@ -60,6 +60,7 @@ export default function MostLikelyPage() {
 
   const [currentQuestion, setCurrentQuestion] = useState<MLQuestion | null>(null)
   const [guesses, setGuesses] = useState<Guess[]>([])
+  const [selectedVotes, setSelectedVotes] = useState<string[]>([])
 
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   const celebrationSound = useRef<HTMLAudioElement | null>(null)
@@ -78,7 +79,7 @@ export default function MostLikelyPage() {
     }
   }, [])
 
-  // Accumulate round into history when entering reveal phase (covers non-host players)
+  // Accumulate round into history when entering reveal phase
   useEffect(() => {
     if (gameState?.phase !== 'reveal') return
     const idx = gameState.current_question_idx ?? 0
@@ -200,6 +201,7 @@ export default function MostLikelyPage() {
           await loadQuestion(gs.id)
           if (gs.phase === 'answering') {
             setGuesses([])
+            setSelectedVotes([])
           } else {
             await loadGuesses(gs.id)
           }
@@ -214,6 +216,7 @@ export default function MostLikelyPage() {
         })
         .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'guesses' }, async () => {
           setGuesses([])
+          setSelectedVotes([])
         })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms' }, (payload) => {
           const r = payload.new as Room
@@ -232,22 +235,33 @@ export default function MostLikelyPage() {
     }
   }, [code, router, loadQuestion, loadGuesses])
 
-  async function vote(targetPlayerId: string) {
-    if (!gameState || !myId || !myToken || actioning) return
-    if (myVote) return
+  const maxVotesAllowed = players.length < 5 ? 1 : 3
+
+  function toggleVote(targetId: string) {
+    setSelectedVotes(prev => {
+      if (prev.includes(targetId)) return prev.filter(id => id !== targetId)
+      if (prev.length >= maxVotesAllowed) return prev
+      return [...prev, targetId]
+    })
+  }
+
+  async function submitVotes() {
+    if (!gameState || !myId || !myToken || actioning || selectedVotes.length === 0) return
     setActioning(true)
     try {
-      await fetch('/api/game-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'submit_ml_vote',
-          playerId: myId,
-          token: myToken,
-          gameStateId: gameState.id,
-          targetPlayerId,
-        }),
-      })
+      for (const targetPlayerId of selectedVotes) {
+        await fetch('/api/game-action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'submit_ml_vote',
+            playerId: myId,
+            token: myToken,
+            gameStateId: gameState.id,
+            targetPlayerId,
+          }),
+        })
+      }
       channelRef.current?.httpSend('sync', {})
     } catch (e) {
       console.error(e)
@@ -259,7 +273,6 @@ export default function MostLikelyPage() {
   async function nextRound() {
     if (!gameState || !myId || !myToken || actioning) return
 
-    // Eagerly accumulate before API deletes guesses from DB
     const idx = gameState.current_question_idx ?? 0
     if (lastAccumulatedIdxRef.current < idx) {
       lastAccumulatedIdxRef.current = idx
@@ -319,9 +332,15 @@ export default function MostLikelyPage() {
 
   const myPlayer = players.find(p => p.id === myId)
   const isHost = myPlayer?.is_host ?? false
-  const myVote = guesses.find(g => g.player_id === myId)?.guess ?? null
-  const totalVotes = guesses.length
 
+  // All guesses I've submitted this round (from DB)
+  const mySubmittedVotes = guesses.filter(g => g.player_id === myId).map(g => g.guess)
+  const hasSubmitted = mySubmittedVotes.length > 0
+
+  // For the waiting dots: count unique voters
+  const uniqueVoters = new Set(guesses.map(g => g.player_id)).size
+
+  // Vote counts per target (all guesses from all players)
   const voteCounts: Record<string, number> = {}
   for (const g of guesses) {
     voteCounts[g.guess] = (voteCounts[g.guess] ?? 0) + 1
@@ -334,6 +353,8 @@ export default function MostLikelyPage() {
   const totalRounds = gameState.total_rounds ?? 20
   const currentIdx = gameState.current_question_idx ?? 0
   const isLastRound = currentIdx === totalRounds - 1
+
+  const isMaxedOut = selectedVotes.length >= maxVotesAllowed
 
   return (
     <div className="game-page" style={{ overflow: 'hidden' }}>
@@ -465,7 +486,7 @@ export default function MostLikelyPage() {
                   ))}
                 </div>
                 <span style={{ fontSize: 12, color: T.muted, fontWeight: 600 }}>
-                  {totalVotes}/{players.length} {totalVotes === 1 ? 'vote' : 'votes'}
+                  {uniqueVoters}/{players.length} {uniqueVoters === 1 ? 'a voté' : 'ont voté'}
                 </span>
               </div>
             </GlassPanel>
@@ -477,51 +498,95 @@ export default function MostLikelyPage() {
                   initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}
                   style={{ width: '100%' }}
                 >
-                  {myVote ? (
+                  {hasSubmitted ? (
                     <p style={{ textAlign: 'center', color: T.muted, fontSize: 14, marginBottom: 16 }}>
-                      Vote enregistré ! En attente des autres...
+                      Votes envoyés ! En attente des autres...
                     </p>
                   ) : (
                     <p style={{ textAlign: 'center', color: T.muted, fontSize: 14, marginBottom: 16 }}>
-                      Tape sur la personne qui correspond le plus 👇
+                      {maxVotesAllowed === 1
+                        ? 'Tape sur la personne qui correspond le plus 👇'
+                        : `Choisis jusqu'à ${maxVotesAllowed} personnes 👇${selectedVotes.length > 0 ? ` · ${selectedVotes.length}/${maxVotesAllowed} sélectionné${selectedVotes.length > 1 ? 's' : ''}` : ''}`
+                      }
                     </p>
                   )}
+
                   <div className="ml-player-grid">
                     {players.map((p, i) => {
-                      const hasVoted = !!myVote
-                      const isMyTarget = myVote === p.id
+                      const voteRank = selectedVotes.indexOf(p.id)
+                      const isSelected = voteRank !== -1
+                      const isDisabled = hasSubmitted || actioning || (isMaxedOut && !isSelected)
                       return (
                         <motion.button
                           key={p.id}
-                          onClick={() => vote(p.id)}
-                          disabled={hasVoted || actioning}
-                          whileHover={!hasVoted && !actioning ? { scale: 1.04 } : undefined}
-                          whileTap={!hasVoted && !actioning ? { scale: 0.96 } : undefined}
+                          onClick={() => !hasSubmitted && !actioning && toggleVote(p.id)}
+                          disabled={isDisabled}
+                          whileHover={!isDisabled ? { scale: 1.04 } : undefined}
+                          whileTap={!isDisabled ? { scale: 0.96 } : undefined}
                           style={{
                             width: 140,
                             padding: '18px 12px',
                             borderRadius: 20,
-                            border: `2px solid ${isMyTarget ? ORANGE : hasVoted ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.12)'}`,
-                            background: isMyTarget
+                            border: `2px solid ${
+                              isSelected ? ORANGE
+                              : hasSubmitted ? 'rgba(255,255,255,0.06)'
+                              : isMaxedOut ? 'rgba(255,255,255,0.04)'
+                              : 'rgba(255,255,255,0.12)'
+                            }`,
+                            background: isSelected
                               ? `linear-gradient(135deg, rgba(249,115,22,0.25), rgba(236,72,153,0.2))`
-                              : hasVoted ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.06)',
-                            cursor: hasVoted || actioning ? 'default' : 'pointer',
+                              : hasSubmitted || isMaxedOut ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.06)',
+                            cursor: isDisabled ? 'default' : 'pointer',
                             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-                            opacity: hasVoted && !isMyTarget ? 0.45 : 1,
+                            opacity: (hasSubmitted || isMaxedOut) && !isSelected ? 0.38 : 1,
                             transition: 'all 0.2s',
-                            boxShadow: isMyTarget ? `0 0 24px rgba(249,115,22,0.3)` : 'none',
+                            boxShadow: isSelected ? `0 0 24px rgba(249,115,22,0.3)` : 'none',
+                            position: 'relative',
                           }}
                         >
-                          <Avatar name={p.name} index={i} size={48} ring={isMyTarget ? ORANGE : undefined} />
-                          <span style={{ fontSize: 13, fontWeight: 700, color: isMyTarget ? ORANGE : '#fff' }}>
+                          {/* Rank badge — only shown in multi-vote mode */}
+                          {isSelected && maxVotesAllowed > 1 && (
+                            <span style={{
+                              position: 'absolute', top: -10, right: -10,
+                              width: 24, height: 24, borderRadius: '50%',
+                              background: ORANGE,
+                              color: '#fff', fontSize: 13, fontWeight: 900,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              boxShadow: `0 0 8px ${ORANGE}88`,
+                            }}>
+                              {voteRank + 1}
+                            </span>
+                          )}
+                          <Avatar name={p.name} index={i} size={48} ring={isSelected ? ORANGE : undefined} />
+                          <span style={{ fontSize: 13, fontWeight: 700, color: isSelected ? ORANGE : '#fff' }}>
                             {p.name}
                             {p.id === myId && <span style={{ color: T.muted, fontSize: 11 }}> (toi)</span>}
                           </span>
-                          {isMyTarget && <span style={{ fontSize: 18 }}>🫵</span>}
+                          {isSelected && <span style={{ fontSize: 18 }}>🫵</span>}
                         </motion.button>
                       )
                     })}
                   </div>
+
+                  {/* Validate button */}
+                  <AnimatePresence>
+                    {selectedVotes.length > 0 && !hasSubmitted && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 8 }}
+                        style={{ marginTop: 20, textAlign: 'center' }}
+                      >
+                        <Btn
+                          onClick={submitVotes}
+                          disabled={actioning}
+                          style={{ background: `linear-gradient(135deg, ${ORANGE} 0%, ${PINK} 100%)`, padding: '14px 32px', fontSize: 16 }}
+                        >
+                          {actioning ? '...' : maxVotesAllowed === 1 ? 'Valider mon choix' : `Valider mes choix (${selectedVotes.length})`}
+                        </Btn>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </motion.div>
               ) : (
                 <motion.div
@@ -529,76 +594,117 @@ export default function MostLikelyPage() {
                   initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
                   style={{ width: '100%' }}
                 >
-                  <div className="ml-player-grid" style={{ marginBottom: 24 }}>
-                    {players
-                      .slice()
-                      .sort((a, b) => (voteCounts[b.id] ?? 0) - (voteCounts[a.id] ?? 0))
-                      .map((p, i) => {
-                        const count = voteCounts[p.id] ?? 0
-                        const isWinner = winnerIds.includes(p.id)
-                        return (
+                  {(() => {
+                    const SILVER = '#94a3b8'
+                    const BRONZE = '#cd7c3f'
+                    const sorted = players.slice().sort((a, b) => (voteCounts[b.id] ?? 0) - (voteCounts[a.id] ?? 0))
+
+                    // rank with tie support
+                    const rankMap: Record<string, number> = {}
+                    let currentRank = 1
+                    for (let i = 0; i < sorted.length; i++) {
+                      if (i > 0 && (voteCounts[sorted[i].id] ?? 0) < (voteCounts[sorted[i - 1].id] ?? 0)) {
+                        currentRank = i + 1
+                      }
+                      rankMap[sorted[i].id] = currentRank
+                    }
+
+                    const rankColor = (r: number) => r === 1 ? GOLD : r === 2 ? SILVER : r === 3 ? BRONZE : 'rgba(255,255,255,0.08)'
+                    const rankEmoji = (r: number) => r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : null
+
+                    return (
+                      <>
+                        <div className="ml-player-grid" style={{ marginBottom: 24 }}>
+                          {sorted.map((p, i) => {
+                            const count = voteCounts[p.id] ?? 0
+                            const rank = rankMap[p.id]
+                            const isTop3 = rank <= 3
+                            const isFirst = rank === 1
+                            // reveal bottom-to-top: last place first, winner last
+                            const delay = (sorted.length - 1 - i) * 0.28
+                            const color = rankColor(rank)
+                            const emoji = rankEmoji(rank)
+                            const avatarSize = isFirst ? 62 : isTop3 ? 54 : 48
+
+                            return (
+                              <motion.div
+                                key={p.id}
+                                initial={{ opacity: 0, y: 20, scale: 0.85 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                transition={isFirst
+                                  ? { delay, type: 'spring', bounce: 0.4 }
+                                  : { delay, type: 'tween', duration: 0.35 }
+                                }
+                                style={{
+                                  padding: '18px 12px',
+                                  borderRadius: 20,
+                                  border: `2px solid ${isTop3 ? color : 'rgba(255,255,255,0.08)'}`,
+                                  background: isTop3
+                                    ? rank === 1
+                                      ? `linear-gradient(135deg, rgba(245,158,11,0.22), rgba(249,115,22,0.14))`
+                                      : rank === 2
+                                        ? `linear-gradient(135deg, rgba(148,163,184,0.18), rgba(100,116,139,0.10))`
+                                        : `linear-gradient(135deg, rgba(205,124,63,0.18), rgba(161,97,49,0.10))`
+                                    : 'rgba(255,255,255,0.04)',
+                                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                                  boxShadow: isTop3 ? `0 0 ${isFirst ? 40 : 20}px ${color}44` : 'none',
+                                  position: 'relative',
+                                }}
+                              >
+                                {emoji && (
+                                  <span style={{ position: 'absolute', top: -14, fontSize: isFirst ? 26 : 20 }}>{emoji}</span>
+                                )}
+                                <Avatar name={p.name} index={players.indexOf(p)} size={avatarSize} ring={isTop3 ? color : undefined} />
+                                <span style={{ fontSize: 13, fontWeight: 700, color: isTop3 ? color : '#fff' }}>{p.name}</span>
+                                <div style={{
+                                  padding: '4px 14px', borderRadius: 100,
+                                  background: isTop3 ? `${color}22` : 'rgba(255,255,255,0.07)',
+                                  border: `1px solid ${isTop3 ? color + '55' : 'transparent'}`,
+                                }}>
+                                  <span style={{ fontSize: 13, fontWeight: 800, color: isTop3 ? color : T.muted }}>
+                                    {count} {count === 1 ? 'vote' : 'votes'}
+                                  </span>
+                                </div>
+                              </motion.div>
+                            )
+                          })}
+                        </div>
+
+                        {winnerIds.length > 0 && (
                           <motion.div
-                            key={p.id}
-                            initial={{ opacity: 0, y: 12 }}
+                            initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.06 }}
-                            style={{
-                              padding: '18px 12px',
-                              borderRadius: 20,
-                              border: `2px solid ${isWinner ? ORANGE : 'rgba(255,255,255,0.08)'}`,
-                              background: isWinner
-                                ? `linear-gradient(135deg, rgba(249,115,22,0.2), rgba(236,72,153,0.15))`
-                                : 'rgba(255,255,255,0.04)',
-                              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-                              boxShadow: isWinner ? `0 0 32px rgba(249,115,22,0.35)` : 'none',
-                              position: 'relative',
-                            }}
+                            transition={{ delay: sorted.length * 0.28 + 0.1 }}
                           >
-                            {isWinner && (
-                              <span style={{ position: 'absolute', top: -12, fontSize: 22 }}>🏆</span>
-                            )}
-                            <Avatar name={p.name} index={players.indexOf(p)} size={52} ring={isWinner ? ORANGE : undefined} />
-                            <span style={{ fontSize: 13, fontWeight: 700, color: isWinner ? ORANGE : '#fff' }}>{p.name}</span>
-                            <div style={{
-                              padding: '4px 14px', borderRadius: 100,
-                              background: isWinner ? `rgba(249,115,22,0.25)` : 'rgba(255,255,255,0.07)',
-                              border: `1px solid ${isWinner ? ORANGE + '55' : 'transparent'}`,
-                            }}>
-                              <span style={{ fontSize: 13, fontWeight: 800, color: isWinner ? ORANGE : T.muted }}>
-                                {count} {count === 1 ? 'vote' : 'votes'}
+                            <GlassPanel glow={ORANGE} style={{ padding: '16px 20px', textAlign: 'center', marginBottom: 16 }}>
+                              <span style={{ fontSize: 20, fontWeight: 900, color: '#fff' }}>
+                                {winnerIds.length === 1
+                                  ? `🫵 ${players.find(p => p.id === winnerIds[0])?.name} doit boire !`
+                                  : `🫵 Égalité — ${winnerIds.map(id => players.find(p => p.id === id)?.name).join(' & ')} doivent boire !`
+                                }
                               </span>
-                            </div>
+                            </GlassPanel>
                           </motion.div>
-                        )
-                      })}
-                  </div>
+                        )}
 
-                  {winnerIds.length > 0 && (
-                    <GlassPanel glow={ORANGE} style={{ padding: '16px 20px', textAlign: 'center', marginBottom: 16 }}>
-                      <span style={{ fontSize: 20, fontWeight: 900, color: '#fff' }}>
-                        {winnerIds.length === 1
-                          ? `🫵 ${players.find(p => p.id === winnerIds[0])?.name} doit boire !`
-                          : `🫵 Égalité — ${winnerIds.map(id => players.find(p => p.id === id)?.name).join(' & ')} doivent boire !`
-                        }
-                      </span>
-                    </GlassPanel>
-                  )}
-
-                  <div style={{ textAlign: 'center' }}>
-                    {isHost ? (
-                      <Btn
-                        onClick={nextRound}
-                        disabled={actioning}
-                        style={{ background: `linear-gradient(135deg, ${ORANGE} 0%, ${PINK} 100%)` }}
-                      >
-                        {actioning ? '...' : isLastRound ? 'Voir les résultats 🏆' : 'Question Suivante →'}
-                      </Btn>
-                    ) : (
-                      <p style={{ color: T.muted, fontSize: 14 }}>
-                        {isLastRound ? 'En attente des résultats finaux...' : 'Le host va passer à la question suivante...'}
-                      </p>
-                    )}
-                  </div>
+                        <div style={{ textAlign: 'center' }}>
+                          {isHost ? (
+                            <Btn
+                              onClick={nextRound}
+                              disabled={actioning}
+                              style={{ background: `linear-gradient(135deg, ${ORANGE} 0%, ${PINK} 100%)` }}
+                            >
+                              {actioning ? '...' : isLastRound ? 'Voir les résultats 🏆' : 'Question Suivante →'}
+                            </Btn>
+                          ) : (
+                            <p style={{ color: T.muted, fontSize: 14 }}>
+                              {isLastRound ? 'En attente des résultats finaux...' : 'Le host va passer à la question suivante...'}
+                            </p>
+                          )}
+                        </div>
+                      </>
+                    )
+                  })()}
                 </motion.div>
               )}
             </AnimatePresence>
