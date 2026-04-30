@@ -191,8 +191,8 @@ export default function TruthOrDareGamePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'tod_submit_choice', playerId: myId, token: myToken, gameStateId: gameState.id, choiceType: type }),
       })
-      channelRef.current?.send({ type: 'broadcast', event: 'sync', payload: {} })
-      
+      channelRef.current?.httpSend('sync', {})
+
       setTimeout(() => {
         if (gameState?.phase === 'answering') {
           loadChoice(gameState.id)
@@ -213,7 +213,7 @@ export default function TruthOrDareGamePage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'tod_pass_turn', playerId: myId, token: myToken, gameStateId: gameState.id }),
     })
-    channelRef.current?.send({ type: 'broadcast', event: 'sync', payload: {} })
+    channelRef.current?.httpSend('sync', {})
     setActioning(false)
   }
 

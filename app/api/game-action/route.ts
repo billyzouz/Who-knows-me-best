@@ -221,6 +221,8 @@ export async function POST(req: Request) {
         const j = Math.floor(Math.random() * (i + 1));
         [sequence[i], sequence[j]] = [sequence[j], sequence[i]]
       }
+      const MAX_ROUNDS = 20
+      const limitedSequence = sequence.slice(0, MAX_ROUNDS)
 
       await supabaseAdmin.from('game_state').delete().eq('room_id', player.room_id)
       const { data: gs } = await supabaseAdmin.from('game_state').insert({
@@ -228,8 +230,8 @@ export async function POST(req: Request) {
         current_subject_id: null,
         current_question_idx: 0,
         phase: 'answering',
-        player_sequence: sequence,
-        total_rounds: sequence.length,
+        player_sequence: limitedSequence,
+        total_rounds: limitedSequence.length,
         updated_at: new Date().toISOString(),
       }).select().single()
       if (!gs) return NextResponse.json({ error: 'Erreur création état' }, { status: 500 })
@@ -239,7 +241,7 @@ export async function POST(req: Request) {
         room_id: player.room_id,
         author_id: playerId,
         text: 'ML_QUESTION',
-        answer: sequence[0],
+        answer: limitedSequence[0],
       })
       await supabaseAdmin.from('rooms').update({ status: 'playing_most_likely', mode: `most_likely:${category}` }).eq('id', player.room_id)
       break
