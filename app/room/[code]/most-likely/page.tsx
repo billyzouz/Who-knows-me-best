@@ -486,7 +486,7 @@ export default function MostLikelyPage() {
                       Tape sur la personne qui correspond le plus 👇
                     </p>
                   )}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 }}>
+                  <div className="ml-player-grid">
                     {players.map((p, i) => {
                       const hasVoted = !!myVote
                       const isMyTarget = myVote === p.id
@@ -498,6 +498,7 @@ export default function MostLikelyPage() {
                           whileHover={!hasVoted && !actioning ? { scale: 1.04 } : undefined}
                           whileTap={!hasVoted && !actioning ? { scale: 0.96 } : undefined}
                           style={{
+                            width: 140,
                             padding: '18px 12px',
                             borderRadius: 20,
                             border: `2px solid ${isMyTarget ? ORANGE : hasVoted ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.12)'}`,
