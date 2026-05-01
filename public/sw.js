@@ -46,5 +46,7 @@ self.addEventListener('fetch', (event) => {
 
   // Network-only for HTML pages — never cache, always fresh
   // (caching HTML causes stale JS references after deploys)
-  event.respondWith(fetch(event.request))
+  event.respondWith(
+    fetch(event.request).catch(() => Response.error())
+  )
 })
