@@ -700,8 +700,8 @@ export default function MostLikelyPage() {
                             <GlassPanel glow={ORANGE} style={{ padding: '16px 20px', textAlign: 'center', marginBottom: 16 }}>
                               <span style={{ fontSize: 20, fontWeight: 900, color: '#fff' }}>
                                 {winnerIds.length === 1
-                                  ? `🫵 ${players.find(p => p.id === winnerIds[0])?.name} doit boire !`
-                                  : `🫵 Égalité — ${winnerIds.map(id => players.find(p => p.id === id)?.name).join(' & ')} doivent boire !`
+                                  ? `🍻 ${players.find(p => p.id === winnerIds[0])?.name} doit boire !`
+                                  : `🍻 Égalité — ${winnerIds.map(id => players.find(p => p.id === id)?.name).join(' & ')} doivent boire !`
                                 }
                               </span>
                             </GlassPanel>
