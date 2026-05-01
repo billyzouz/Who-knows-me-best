@@ -583,7 +583,7 @@ export default function MostLikelyPage() {
                             {p.name}
                             {p.id === myId && <span style={{ color: T.muted, fontSize: 11 }}> (toi)</span>}
                           </span>
-                          {isSelected && <span style={{ fontSize: 18 }}>🫵</span>}
+                          {isSelected && <span style={{ fontSize: 18 }}>☝️</span>}
                         </motion.button>
                       )
                     })}
