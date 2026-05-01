@@ -723,6 +723,7 @@ export default function MostLikelyPage() {
                                 {players
                                   .slice()
                                   .sort((a, b) => (cumulativeVotes[b.id] ?? 0) - (cumulativeVotes[a.id] ?? 0))
+                                  .slice(0, 3)
                                   .map((p, i) => {
                                     const total = cumulativeVotes[p.id] ?? 0
                                     const maxTotal = Math.max(...players.map(pl => cumulativeVotes[pl.id] ?? 0), 1)
