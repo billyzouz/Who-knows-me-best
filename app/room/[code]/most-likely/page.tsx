@@ -82,6 +82,10 @@ export default function MostLikelyPage() {
     }
   }, [])
 
+  useEffect(() => {
+    setSelectedVotes([])
+  }, [gameState?.current_question_idx])
+
   // Accumulate round into history when entering reveal phase
   useEffect(() => {
     if (gameState?.phase !== 'reveal') return
