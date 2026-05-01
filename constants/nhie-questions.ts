@@ -495,4 +495,77 @@ export const NHIE_QUESTIONS: NhieQuestion[] = [
   { level: 'hard', text: 'eu des rapports intimes avec quelqu\'un et agi ensuite comme si rien ne s\'était passé — dans un cadre où cette neutralité était particulièrement cruelle' },
   { level: 'hard', text: 'eu une relation intime avec quelqu\'un tout en maintenant une correspondance romantique active avec une autre personne que cette personne ne connaissait pas' },
   { level: 'hard', text: 'eu une relation intime avec quelqu\'un dont j\'ai effacé toute trace — messages, photos, historiques — pour que ça n\'existe officiellement jamais' },
+
+  // ─── VAGUE 3 — HARD DIVERSIFIÉ ─────────────────────────────────────────────
+
+  // Confessions sexuelles (hors infidélité)
+  { level: 'hard', text: 'filmé ou photographié un rapport intime à l\'insu de l\'autre personne' },
+  { level: 'hard', text: 'eu une relation intime dans un lieu public avec un risque réel de me faire prendre' },
+  { level: 'hard', text: 'regardé le téléphone ou l\'ordinateur de quelqu\'un dans l\'espoir de trouver des contenus intimes' },
+  { level: 'hard', text: 'eu une relation intime en présence d\'une tierce personne, de façon délibérée' },
+  { level: 'hard', text: 'partagé des détails très intimes sur une relation avec des personnes que l\'intéressé(e) connaissait' },
+  { level: 'hard', text: 'eu des échanges à caractère sexuel explicite avec quelqu\'un alors qu\'une autre personne pouvait potentiellement voir' },
+  { level: 'hard', text: 'conservé des photos intimes d\'un(e) ex longtemps après la fin de la relation, sciemment' },
+  { level: 'hard', text: 'eu une relation intime avec quelqu\'un de bien plus âgé(e) ou plus jeune, en sachant pertinemment que ce serait jugé par mon entourage' },
+
+  // Actes moralement sombres
+  { level: 'hard', text: 'regardé quelqu\'un se faire humilier ou maltraiter sans intervenir, pour ne pas me compliquer la vie' },
+  { level: 'hard', text: 'profité de la vulnérabilité de quelqu\'un en deuil ou en pleine crise pour me rapprocher de lui/elle' },
+  { level: 'hard', text: 'préféré laisser une relation mourir plutôt que d\'avoir une vraie conversation difficile' },
+  { level: 'hard', text: 'inventé une fausse urgence ou une maladie pour éviter quelque chose ou quelqu\'un' },
+  { level: 'hard', text: 'laissé quelqu\'un prendre une décision importante sans lui dire ce que je savais — et qui aurait tout changé' },
+  { level: 'hard', text: 'ressenti du plaisir en voyant quelqu\'un que je n\'aime pas échouer dans quelque chose' },
+  { level: 'hard', text: 'gardé un secret qui aurait pu empêcher quelqu\'un de souffrir, parce que m\'impliquer ne m\'arrangeait pas' },
+  { level: 'hard', text: 'poussé quelqu\'un vers une situation ou une relation en sachant que ça lui ferait du mal' },
+  { level: 'hard', text: 'laissé une erreur commise à mon encontre s\'amplifier avant d\'en parler, pour maximiser mon avantage' },
+  { level: 'hard', text: 'fait du mal à quelqu\'un de façon délibérée et présenté ça comme une erreur accidentelle' },
+
+  // Manipulation financière
+  { level: 'hard', text: 'emprunté de l\'argent à quelqu\'un sans jamais avoir eu l\'intention de rembourser' },
+  { level: 'hard', text: 'fait semblant de manquer d\'argent de façon régulière pour que quelqu\'un d\'autre paye à ma place' },
+  { level: 'hard', text: 'utilisé une relation romantique ou amicale principalement pour des avantages matériels' },
+  { level: 'hard', text: 'menti sur mes revenus ou ma situation financière pour impressionner quelqu\'un' },
+  { level: 'hard', text: 'pris quelque chose de valeur à quelqu\'un proche sans lui demander, en sachant qu\'il/elle s\'en apercevrait' },
+  { level: 'hard', text: 'bénéficié d\'une aide ou d\'un avantage auquel je n\'avais clairement pas droit, en le sachant parfaitement' },
+  { level: 'hard', text: 'convaincu quelqu\'un d\'investir dans quelque chose en minimisant délibérément les risques que je connaissais' },
+  { level: 'hard', text: 'profité d\'une relation pour accéder à un mode de vie ou un cercle social que je n\'aurais pas pu me payer seul(e)' },
+
+  // Bombes de soirée — groupe présent
+  { level: 'hard', text: 'eu une relation intime avec quelqu\'un présent ce soir, et que la majorité des personnes ici l\'ignorent encore' },
+  { level: 'hard', text: 'eu une attirance réelle pour quelqu\'un ici ce soir et failli agir dessus' },
+  { level: 'hard', text: 'dit du mal de quelqu\'un présent ce soir à d\'autres personnes également présentes dans cette pièce' },
+  { level: 'hard', text: 'caché à ce groupe une information qui aurait changé quelque chose à notre dynamique si elle était connue' },
+  { level: 'hard', text: 'menti à quelqu\'un de ce groupe pour le/la maintenir dans une illusion qui m\'arrangeait' },
+  { level: 'hard', text: 'eu une conversation secrète sur une personne présente ce soir avec une autre personne également présente' },
+  { level: 'hard', text: 'pensé sérieusement à couper les ponts avec quelqu\'un de ce groupe sans jamais lui en donner la vraie raison' },
+  { level: 'hard', text: 'eu envie de lâcher une vérité sur quelqu\'un de ce groupe ce soir, et me retenir encore' },
+
+  // Violations numériques & vie privée
+  { level: 'hard', text: 'lu les messages privés de quelqu\'un à son insu — et trouvé quelque chose que j\'aurais préféré ne pas voir' },
+  { level: 'hard', text: 'créé un faux profil ou une fausse identité en ligne pour surveiller quelqu\'un' },
+  { level: 'hard', text: 'suivi ou fait surveiller les déplacements de quelqu\'un à son insu' },
+  { level: 'hard', text: 'partagé une information très privée sur quelqu\'un dans un groupe de discussion dont il/elle ne faisait pas partie' },
+  { level: 'hard', text: 'conservé des informations compromettantes sur quelqu\'un en attendant le bon moment pour m\'en servir' },
+
+  // Substances & imprudences
+  { level: 'hard', text: 'conduit avec des passagers en état d\'ivresse avancée ou sous l\'influence de substances' },
+  { level: 'hard', text: 'présenté quelque chose comme inoffensif à quelqu\'un alors que je savais que ce n\'était pas le cas' },
+  { level: 'hard', text: 'continué à encourager quelqu\'un à consommer en voyant qu\'il/elle n\'était plus en état' },
+  { level: 'hard', text: 'utilisé la soirée ou l\'alcool comme couverture pour faire quelque chose que j\'avais prémédité sobre' },
+  { level: 'hard', text: 'profité de l\'état altéré de quelqu\'un pour obtenir quelque chose que je n\'aurais probablement pas eu sobrement' },
+  { level: 'hard', text: 'fourni quelque chose à quelqu\'un sans lui expliquer vraiment ce que c\'était' },
+
+  // Pouvoir & exploitation
+  { level: 'hard', text: 'utilisé ma position — travail, hiérarchie, réputation — pour pousser quelqu\'un dans une direction qui m\'avantageait' },
+  { level: 'hard', text: 'obtenu quelque chose grâce à la séduction dans une situation où ça n\'avait pas sa place' },
+  { level: 'hard', text: 'poussé quelqu\'un à faire quelque chose qu\'il/elle refusait en insistant jusqu\'à ce qu\'il/elle cède' },
+  { level: 'hard', text: 'gardé quelqu\'un émotionnellement attaché à moi sans intention d\'aller plus loin, parce que ça m\'était utile' },
+  { level: 'hard', text: 'utilisé la jalousie de quelqu\'un comme levier pour obtenir quelque chose de lui/elle' },
+  { level: 'hard', text: 'exploité l\'insécurité ou le syndrome de l\'imposteur de quelqu\'un pour garder l\'avantage sur lui/elle' },
+  { level: 'hard', text: 'rendu quelqu\'un dépendant de mon approbation de façon délibérée, parce que ça me donnait du contrôle' },
+
+  // Finales — bombes ultimes
+  { level: 'hard', text: 'fait quelque chose ce soir dont je sais déjà que je n\'en parlerai jamais — pas même à mon/ma meilleur(e) ami(e)' },
+  { level: 'hard', text: 'une pensée ce soir en arrivant ici que je ne répéterai jamais à voix haute, même sous pression' },
+  { level: 'hard', text: 'caché à ce groupe ce que je pense vraiment d\'au moins une personne présente, depuis beaucoup trop longtemps' },
 ]

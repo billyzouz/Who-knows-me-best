@@ -919,4 +919,40 @@ export const ML_QUESTIONS: MLQuestion[] = [
   { id: 'ml_hard_548', level: 'hard', text: 'Qui pourrait, si les vérités non dites de ce groupe remontaient à la surface ce soir, en être le plus déstabilisé ?' },
   { id: 'ml_hard_549', level: 'hard', text: 'Qui pourrait avoir le secret le plus susceptible de redéfinir ce groupe entier — s\'il sortait ce soir ?' },
   { id: 'ml_hard_550', level: 'hard', text: 'Qui pourrait finir cette soirée avec quelque chose de non résolu vis-à-vis de quelqu\'un d\'ici — et repartir sans jamais l\'avoir dit ?' },
+
+  // ─── VAGUE 5 — BOMBES SOIRÉE (551–580) ─────────────────────────────────────
+
+  // Tension sexuelle & romantique dans le groupe
+  { id: 'ml_hard_551', level: 'hard', text: 'Qui pourrait avoir une sextape — seul(e) ou avec quelqu\'un — qui ferait exploser ce groupe si elle sortait ?' },
+  { id: 'ml_hard_552', level: 'hard', text: 'Qui pourrait être en train de développer des sentiments pour quelqu\'un de ce groupe en ce moment même — ce soir ?' },
+  { id: 'ml_hard_553', level: 'hard', text: 'Qui pourrait avoir envoyé des nudes à quelqu\'un de ce groupe à un moment ou à un autre ?' },
+  { id: 'ml_hard_554', level: 'hard', text: 'Qui pourrait être sur une app de rencontre en ce moment sans que son/sa partenaire ne le sache ?' },
+  { id: 'ml_hard_555', level: 'hard', text: 'Qui pourrait avoir le plus de chances de finir la soirée avec quelqu\'un d\'ici, si les autres regardaient ailleurs ?' },
+  { id: 'ml_hard_556', level: 'hard', text: 'Qui pourrait avoir une obsession silencieuse pour quelqu\'un dans cette pièce — et le cacher depuis trop longtemps ?' },
+  { id: 'ml_hard_557', level: 'hard', text: 'Qui pourrait avoir fait des screenshots de photos de quelqu\'un de ce groupe sur les réseaux — pour des raisons qui n\'ont rien d\'innocent ?' },
+  { id: 'ml_hard_558', level: 'hard', text: 'Qui pourrait avoir dragué le/la partenaire d\'un(e) ami(e) présent(e) ce soir à un moment donné ?' },
+  { id: 'ml_hard_559', level: 'hard', text: 'Qui pourrait avoir fait semblant d\'être "juste ami(e)" avec quelqu\'un ici alors que ça n\'a jamais vraiment été que ça ?' },
+  { id: 'ml_hard_560', level: 'hard', text: 'Qui pourrait avoir une conversation en attente sur son téléphone avec quelqu\'un dans cette pièce — qui parlerait pour lui/elle si le groupe la lisait ?' },
+  { id: 'ml_hard_561', level: 'hard', text: 'Qui pourrait avoir fantasmé le plus souvent sur quelqu\'un présent ce soir ?' },
+  { id: 'ml_hard_562', level: 'hard', text: 'Qui pourrait avoir partagé une intimité physique avec quelqu\'un ici dans des circonstances que ni l\'un ni l\'autre ne confirmerait publiquement ?' },
+  { id: 'ml_hard_563', level: 'hard', text: 'Qui pourrait avoir une vraie tension non résolue avec quelqu\'un ici — romantique, sexuelle, ou émotionnelle — qui ne s\'est jamais verbalisée ?' },
+  { id: 'ml_hard_564', level: 'hard', text: 'Qui pourrait trouver quelqu\'un dans ce groupe physiquement attirant ce soir — et ne l\'aurait jamais dit sans ce jeu ?' },
+  { id: 'ml_hard_565', level: 'hard', text: 'Qui pourrait être en train de mentir sur sa situation amoureuse actuelle à ce groupe ?' },
+  { id: 'ml_hard_566', level: 'hard', text: 'Qui pourrait avoir une photo de quelqu\'un présent ce soir dans son téléphone — que cette personne ne sait pas qu\'il/elle a ?' },
+  { id: 'ml_hard_567', level: 'hard', text: 'Qui pourrait avoir utilisé quelqu\'un de ce groupe pour se remettre d\'une rupture sans que l\'autre ne réalise vraiment ce qui se passait ?' },
+  { id: 'ml_hard_568', level: 'hard', text: 'Qui pourrait avoir des sentiments pour quelqu\'un de ce groupe — dont la personne concernée n\'a pas la moindre idée ?' },
+  { id: 'ml_hard_569', level: 'hard', text: 'Qui pourrait avoir profité de quelqu\'un dans un état vulnérable pour obtenir de l\'intimité ?' },
+  { id: 'ml_hard_570', level: 'hard', text: 'Qui pourrait avoir regardé les stories ou le profil d\'un(e) ex présent(e) ce soir — juste avant d\'arriver ?' },
+  { id: 'ml_hard_571', level: 'hard', text: 'Qui pourrait avoir une double attirance dans ce groupe — deux personnes en même temps — en ce moment précis ?' },
+  { id: 'ml_hard_572', level: 'hard', text: 'Qui pourrait avoir eu une relation intime avec quelqu\'un de ce groupe sans jamais en avoir discuté après — comme si ça n\'avait pas eu lieu ?' },
+  { id: 'ml_hard_573', level: 'hard', text: 'Qui pourrait avoir eu une réaction physique involontaire à quelqu\'un de ce groupe ce soir même ?' },
+  { id: 'ml_hard_574', level: 'hard', text: 'Qui pourrait avoir flirté avec la frontière du consentement dans une situation intime sans jamais l\'avoir reconnu ?' },
+  { id: 'ml_hard_575', level: 'hard', text: 'Qui pourrait avoir regardé les réseaux d\'une personne de ce groupe à l\'affût de son statut amoureux — de façon régulière et calculée ?' },
+
+  // Révélations explosives finales
+  { id: 'ml_hard_576', level: 'hard', text: 'Qui pourrait avoir une information sur quelqu\'un de ce groupe qui, lâchée ce soir, ferait exploser la dynamique entière du groupe ?' },
+  { id: 'ml_hard_577', level: 'hard', text: 'Qui pourrait être en train de jouer un rôle ce soir — gentil, neutre, discret — alors qu\'il/elle cache quelque chose de lourd ?' },
+  { id: 'ml_hard_578', level: 'hard', text: 'Qui pourrait avoir menti ce soir à quelqu\'un dans cette pièce — depuis qu\'il/elle est arrivé(e) ?' },
+  { id: 'ml_hard_579', level: 'hard', text: 'Qui pourrait avoir une intention secrète sur quelqu\'un de ce groupe pour cette nuit — et ne pas encore avoir décidé si il/elle va la mettre à exécution ?' },
+  { id: 'ml_hard_580', level: 'hard', text: 'Qui pourrait repartir de cette soirée avec quelque chose — un secret, une tension, un aveu non dit — qu\'il/elle n\'avait pas en arrivant, et que personne d\'autre ne remarquera ?' },
 ]

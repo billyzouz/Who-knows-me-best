@@ -1063,7 +1063,48 @@ const hardTruths = [
   "Quelle est la chose la plus humiliante que tu aies faite pour récupérer un ex ?",
   "As-tu déjà douté sérieusement de la paternité/maternité d'un enfant dans ton entourage ?",
   "Quel est le fantasme moralement inacceptable que tu as déjà eu ?",
-  "Qui ici a, selon toi, le potentiel de devenir la pire version de lui-même dans 10 ans ?"
+  "Qui ici a, selon toi, le potentiel de devenir la pire version de lui-même dans 10 ans ?",
+
+  // ─── NOUVELLES VÉRITÉS HARD ─────────────────────────────────────────────────
+  "As-tu déjà filmé ou photographié quelqu'un dans un contexte intime sans lui dire que tu le faisais ?",
+  "As-tu déjà partagé des photos ou vidéos intimes d'une personne avec qui tu avais une relation ?",
+  "As-tu déjà couché avec quelqu'un de ce groupe et préféré que ça reste secret — et c'est encore le cas ce soir ?",
+  "As-tu actuellement une conversation romantique ou sexuelle active avec quelqu'un que personne ici ne connaît ?",
+  "As-tu déjà profité de l'état altéré de quelqu'un pour obtenir quelque chose que tu n'aurais pas eu s'il/elle était sobre ?",
+  "As-tu déjà suivi la localisation de quelqu'un à son insu de manière répétée ?",
+  "Quel est le mensonge le plus important que tu aies jamais dit à quelqu'un présent ce soir ?",
+  "As-tu déjà poussé quelqu'un à quelque chose — sexuellement ou émotionnellement — en ignorant ses réticences ?",
+  "As-tu déjà utilisé les confidences de quelqu'un pour te positionner à son avantage dans une situation qui t'arrangeait ?",
+  "Y a-t-il quelqu'un dans ce groupe à qui tu as fait du mal et à qui tu n'as jamais demandé pardon ?",
+  "As-tu déjà eu une attirance physique ou romantique pour quelqu'un de ce groupe que tu n'as jamais avouée ?",
+  "Quelle est la chose la plus moralement douteuse que tu aies faite pour de l'argent ?",
+  "As-tu déjà trompé quelqu'un avec une personne présente dans cette pièce ce soir ?",
+  "As-tu des conversations actuelles sur ton téléphone que tu effacerais immédiatement si quelqu'un de ce groupe pouvait les voir ?",
+  "As-tu déjà obtenu quelque chose grâce à la séduction dans une situation professionnelle ou sociale où ça n'avait pas sa place ?",
+  "Quelle vérité sur toi, si ce groupe l'apprenait ce soir, changerait durablement la façon dont les gens ici te voient ?",
+  "As-tu déjà gardé quelqu'un émotionnellement attaché à toi sans intention d'aller plus loin, parce que c'était confortable pour toi ?",
+  "As-tu déjà eu des rapports sexuels avec quelqu'un en le laissant croire que vous étiez exclusifs — alors que c'était faux ?",
+  "Quelle est la chose la plus intime que tu aies faite et dont tu n'as parlé à absolument personne ?",
+  "As-tu déjà découvert quelque chose de dévastateur sur quelqu'un proche en fouillant dans ses affaires ?",
+  "Quel est le plus grand secret que tu gardes pour quelqu'un de ce groupe — et que cette personne espère que tu gardes ce soir ?",
+  "As-tu déjà utilisé la jalousie de quelqu'un comme levier pour obtenir quelque chose de lui/elle ?",
+  "As-tu des regrets sur quelqu'un présent dans cette pièce que tu n'as jamais exprimés à cette personne ?",
+  "Quelle est la chose la plus cruelle que tu aies dite ou faite à quelqu'un, en sachant exactement l'impact que ça aurait ?",
+  "As-tu déjà laissé quelqu'un croire qu'une relation avait de l'avenir alors que tu savais depuis le début que c'était faux ?",
+  "Quelle est la pensée la plus inappropriée que tu aies eue sur quelqu'un de ce groupe — que tu ne diras probablement pas même maintenant ?",
+  "As-tu jamais eu envie de tout lâcher — relation, amis, famille — et recommencer une vie entière ailleurs sans prévenir personne ?",
+  "Quelle est la limite morale que tu as franchie et que tu te sais capable de refranchir si les circonstances se représentaient ?",
+  "As-tu déjà manipulé quelqu'un pour le/la faire rester dans ta vie alors que tu savais que ce n'était pas bon pour lui/elle ?",
+  "Quelle est la vérité sur quelqu'un de ce groupe que tu retiens depuis trop longtemps et que tu as envie de lâcher ce soir ?",
+  "As-tu déjà trahi la confiance de quelqu'un en te convainquant que tu faisais ça pour son bien ?",
+  "Qu'est-ce que tu aurais fait différemment avec quelqu'un présent ce soir si tu avais pu revenir en arrière ?",
+  "As-tu déjà utilisé une information personnelle et sensible sur quelqu'un comme levier dans un conflit ou une négociation ?",
+  "Quel comportement de ta part — que tu sais pertinemment négatif — continues-tu à avoir malgré tout ?",
+  "As-tu une double vie — même partielle — que personne dans ce groupe ne connaît vraiment ?",
+  "As-tu déjà fait semblant de soutenir quelqu'un dans un choix en espérant secrètement que ça tourne mal pour avoir raison ?",
+  "Quel est le truc le plus dark que tu aies fait ou pensé sous l'influence de substances, que tu n'as jamais avoué à personne ?",
+  "As-tu déjà rendu quelqu'un dépendant de ton approbation de façon délibérée, parce que ça te donnait du contrôle sur lui/elle ?",
+  "Si tu devais avouer une chose ce soir à une seule personne de ce groupe sans que personne d'autre n'entende — qui serait cette personne, et que lui dirais-tu ?"
 ];
 
 const hardActions = [
@@ -1303,7 +1344,7 @@ export const TOD_QUESTIONS: TODQuestion[] = [
     level: 'medium' as const,
     text
   })),
-  ...hardTruths.slice(0, 200).map((text, i) => ({
+  ...hardTruths.map((text, i) => ({
     id: `hard-v-${i + 1}`,
     type: 'truth' as const,
     level: 'hard' as const,
