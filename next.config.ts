@@ -11,8 +11,8 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // No-store on all HTML pages — _next/static is excluded (content-hashed, immutable)
-        source: '/((?!_next/static|_next/image|favicon).*)',
+        // No-store on HTML app routes only — excludes _next/static, public static assets
+        source: '/((?!_next/static|_next/image|favicon|sounds|icon-|apple-touch|sw\\.js).*)',
         headers: [
           { key: 'Cache-Control', value: 'no-store, must-revalidate' },
         ],
