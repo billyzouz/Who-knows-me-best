@@ -61,6 +61,7 @@ export default function MostLikelyPage() {
   const [currentQuestion, setCurrentQuestion] = useState<MLQuestion | null>(null)
   const [guesses, setGuesses] = useState<Guess[]>([])
   const [selectedVotes, setSelectedVotes] = useState<string[]>([])
+  const [cumulativeVotes, setCumulativeVotes] = useState<Record<string, number>>({})
 
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   const celebrationSound = useRef<HTMLAudioElement | null>(null)
@@ -69,12 +70,14 @@ export default function MostLikelyPage() {
   const historyRef = useRef<RoundRecord[]>([])
   const lastAccumulatedIdxRef = useRef<number>(-1)
   const playersRef = useRef<Player[]>([])
+  const navigatingRef = useRef(false)
 
   useEffect(() => { playersRef.current = players }, [players])
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       celebrationSound.current = new Audio('/sounds/celebration.mp3')
+      celebrationSound.current.volume = 0.5
       voteSound.current = new Audio('/sounds/flip.mp3')
     }
   }, [])
@@ -94,6 +97,11 @@ export default function MostLikelyPage() {
       guesses: guesses.map(g => ({ playerId: g.player_id, targetId: g.guess })),
       winnerIds: wIds,
     })
+    const cv: Record<string, number> = {}
+    for (const round of historyRef.current) {
+      for (const { targetId } of round.guesses) { cv[targetId] = (cv[targetId] ?? 0) + 1 }
+    }
+    setCumulativeVotes(cv)
   }, [gameState?.phase, gameState?.current_question_idx, guesses])
 
   useEffect(() => {
@@ -132,7 +140,7 @@ export default function MostLikelyPage() {
     let currentRoomId: string | null = null
 
     const fetchData = async () => {
-      if (!currentRoomId) return
+      if (!currentRoomId || navigatingRef.current) return
       const { data: p } = await supabase.from('players').select().eq('room_id', currentRoomId).order('created_at')
       const list = p ?? []
       setPlayers(list)
@@ -222,7 +230,10 @@ export default function MostLikelyPage() {
           const r = payload.new as Room
           if (r.id !== roomData.id) return
           setRoom(r)
-          if (r.status === 'waiting') router.push(`/room/${code}`)
+          if (r.status === 'waiting' && !navigatingRef.current) {
+            navigatingRef.current = true
+            router.push(`/room/${code}`)
+          }
         })
         .on('broadcast', { event: 'sync' }, () => { fetchData() })
         .subscribe()
@@ -230,6 +241,7 @@ export default function MostLikelyPage() {
     init()
 
     return () => {
+      navigatingRef.current = true
       if (pollInterval) clearInterval(pollInterval)
       if (channelRef.current) supabase.removeChannel(channelRef.current)
     }
@@ -249,8 +261,8 @@ export default function MostLikelyPage() {
     if (!gameState || !myId || !myToken || actioning || selectedVotes.length === 0) return
     setActioning(true)
     try {
-      for (const targetPlayerId of selectedVotes) {
-        await fetch('/api/game-action', {
+      await Promise.all(selectedVotes.map(targetPlayerId =>
+        fetch('/api/game-action', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -261,7 +273,7 @@ export default function MostLikelyPage() {
             targetPlayerId,
           }),
         })
-      }
+      ))
       channelRef.current?.httpSend('sync', {})
     } catch (e) {
       console.error(e)
@@ -284,6 +296,11 @@ export default function MostLikelyPage() {
         guesses: guesses.map(g => ({ playerId: g.player_id, targetId: g.guess })),
         winnerIds: wIds,
       })
+      const cv: Record<string, number> = {}
+      for (const round of historyRef.current) {
+        for (const { targetId } of round.guesses) { cv[targetId] = (cv[targetId] ?? 0) + 1 }
+      }
+      setCumulativeVotes(cv)
     }
 
     const totalRounds = gameState.total_rounds ?? 20
@@ -309,17 +326,17 @@ export default function MostLikelyPage() {
   async function resetRoom() {
     if (!myId || !myToken || !room || actioning) return
     setActioning(true)
-    setIsResetting(true)
     try {
       await fetch('/api/game-action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'reset_ml_room', playerId: myId, token: myToken }),
       })
+      navigatingRef.current = true
+      setIsResetting(true)
       router.push(`/room/${code}`)
     } catch (e) {
       console.error(e)
-      setIsResetting(false)
       setActioning(false)
     }
   }
@@ -683,6 +700,52 @@ export default function MostLikelyPage() {
                                   : `🫵 Égalité — ${winnerIds.map(id => players.find(p => p.id === id)?.name).join(' & ')} doivent boire !`
                                 }
                               </span>
+                            </GlassPanel>
+                          </motion.div>
+                        )}
+
+                        {currentIdx > 0 && Object.keys(cumulativeVotes).length > 0 && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: sorted.length * 0.28 + 0.2 }}
+                            style={{ marginBottom: 16 }}
+                          >
+                            <GlassPanel style={{ padding: '14px 18px' }}>
+                              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.muted, margin: '0 0 10px' }}>
+                                🏆 Classement cumulatif
+                              </p>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                                {players
+                                  .slice()
+                                  .sort((a, b) => (cumulativeVotes[b.id] ?? 0) - (cumulativeVotes[a.id] ?? 0))
+                                  .map((p, i) => {
+                                    const total = cumulativeVotes[p.id] ?? 0
+                                    const maxTotal = Math.max(...players.map(pl => cumulativeVotes[pl.id] ?? 0), 1)
+                                    const isLeader = i === 0 && total > 0
+                                    return (
+                                      <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <span style={{ fontSize: 11, color: isLeader ? ORANGE : T.muted, width: 18, textAlign: 'right', fontWeight: 800 }}>
+                                          {i + 1}.
+                                        </span>
+                                        <span style={{ fontSize: 13, fontWeight: 700, color: isLeader ? ORANGE : '#fff', width: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                          {p.name}
+                                        </span>
+                                        <div style={{ flex: 1, height: 6, background: 'rgba(255,255,255,0.08)', borderRadius: 4 }}>
+                                          <div style={{
+                                            width: `${(total / maxTotal) * 100}%`, height: '100%',
+                                            background: isLeader ? ORANGE : 'rgba(249,115,22,0.4)',
+                                            borderRadius: 4, transition: 'width 0.6s ease',
+                                          }} />
+                                        </div>
+                                        <span style={{ fontSize: 12, fontWeight: 800, color: isLeader ? ORANGE : T.muted, width: 28, textAlign: 'right' }}>
+                                          {total}
+                                        </span>
+                                      </div>
+                                    )
+                                  })
+                                }
+                              </div>
                             </GlassPanel>
                           </motion.div>
                         )}

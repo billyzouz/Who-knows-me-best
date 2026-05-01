@@ -15,10 +15,12 @@ export default function ResultsPage() {
   const [loading, setLoading] = useState(true)
   const [isDrinking, setIsDrinking] = useState(false)
   const celebrationSound = useRef<HTMLAudioElement | null>(null)
+  const navigatingRef = useRef(false)
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       celebrationSound.current = new Audio('/sounds/celebration.mp3')
+      celebrationSound.current.volume = 0.5
     }
   }, [])
 
@@ -28,14 +30,15 @@ export default function ResultsPage() {
     let currentRoomId: string | null = null
 
     const fetchPlayers = async () => {
-      if (!currentRoomId) return
+      if (!currentRoomId || navigatingRef.current) return
       const { data: p } = await supabase.from('players').select().eq('room_id', currentRoomId).order('score', { ascending: false })
       const list = p ?? []
       setPlayers(list)
 
       // Polling de secours pour le retour au Lobby
       const { data: r } = await supabase.from('rooms').select('status').eq('id', currentRoomId).single()
-      if (r && r.status === 'waiting') {
+      if (r && r.status === 'waiting' && !navigatingRef.current) {
+        navigatingRef.current = true
         router.push(`/room/${code}`)
         return
       }
@@ -91,7 +94,8 @@ export default function ResultsPage() {
         })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms' }, (payload) => {
           const r = payload.new as Room
-          if (r.id === currentRoomId && (r.status as string) === 'waiting') {
+          if (r.id === currentRoomId && (r.status as string) === 'waiting' && !navigatingRef.current) {
+            navigatingRef.current = true
             router.push(`/room/${code}`)
           }
         })
@@ -107,6 +111,7 @@ export default function ResultsPage() {
     init()
     
     return () => {
+      navigatingRef.current = true
       if (pollInterval) clearInterval(pollInterval)
       window.removeEventListener('focus', handleFocus)
     }

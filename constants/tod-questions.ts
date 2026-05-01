@@ -132,7 +132,19 @@ const truths = [
   "As-tu déjà utilisé le Wi-Fi du voisin sans lui dire ?",
   "Quelle est ta pire expérience dans une colocation ?",
   "Quel est l'emoji que tu utilises beaucoup trop ?",
-  "As-tu déjà mangé l'étiquette d'un fruit par accident sans le recracher ?",
+  "As-tu déjà trahi la confiance d'un ami proche et ne lui en as jamais parlé ?",
+  "Quelle est la chose la plus égoïste que tu aies faite en sachant parfaitement que c'était mal ?",
+  "As-tu déjà laissé quelqu'un prendre le blâme pour quelque chose que tu avais fait ?",
+  "Quelle est ton opinion impopulaire que tu n'oses jamais dire à voix haute en groupe ?",
+  "As-tu déjà exclu quelqu'un d'un groupe de conversation sans lui dire pourquoi ?",
+  "Quelle est la décision morale que tu as prise et dont tu n'es pas fier(e) aujourd'hui ?",
+  "As-tu déjà sabordé la carrière ou la réputation d'une connaissance par jalousie ou intérêt ?",
+  "Si tu apprenais un secret très compromettant sur un ami, le garderais-tu ou l'utiliserais-tu ?",
+  "Quelle est l'injustice que tu as fait subir à quelqu'un et que tu n'as jamais réparée ?",
+  "As-tu déjà menti à un ami proche pour protéger ta propre image plutôt que sa santé ?",
+  "Quelle est l'opinion sur un joueur ici que tu gardes pour toi car elle serait blessante ?",
+  "As-tu déjà manipulé une situation pour en tirer un avantage au détriment de quelqu'un d'autre ?",
+  "As-tu mangé l'étiquette d'un fruit par accident sans le recracher ?",
   "Quelle est la mode que tu détestes mais que tu as finie par porter ?",
   "Quel est ton dernier fail avec l'autocorrecteur de ton téléphone ?",
   "As-tu déjà menti à un médecin sur ta consommation d'alcool ?",
@@ -208,7 +220,15 @@ const truths = [
   "Quelle est l'émission de télé-réalité que tu regardes secrètement ?",
   "Quel est ton pire fail avec un assistant vocal (Siri, Alexa) ?",
   "As-tu déjà envoyé un email professionnel avec une énorme faute ?",
-  "Quelle est ton habitude la plus dégoûtante quand personne ne regarde ?"
+  "Quelle est ton habitude la plus dégoûtante quand personne ne regarde ?",
+  "As-tu déjà eu une pensée franchement immorale sur quelqu'un de vulnérable ?",
+  "Quelle est la limite éthique que tu as franchie sans vraiment t'en excuser ?",
+  "Si tu pouvais effacer une action passée dont tu as honte, laquelle serait-ce ?",
+  "Quel est le moment où tu t'es comporté(e) comme la pire version de toi-même ?",
+  "As-tu déjà tiré profit du malheur de quelqu'un en sachant que c'était mesquin ?",
+  "Quelle est ton opinion sincère sur la morale du joueur que tu connais le mieux ici ?",
+  "As-tu déjà préservé ta réputation en sacrifiant celle d'un ami ?",
+  "Quelle est l'action que tu justifies encore aujourd'hui mais qui était objectivement mauvaise ?"
 ];
 
 const actions = [
@@ -423,7 +443,18 @@ const actions = [
   "Laisse la personne à ta gauche te faire un massage des épaules.",
   "Mime un pirate qui cherche un trésor.",
   "Fais une imitation d'un animateur de colonie de vacances.",
-  "Chante une chanson d'amour à une chaussure."
+  "Chante une chanson d'amour à une chaussure.",
+  "Appelle un magasin et demande, avec un calme parfait, si leur rayon 'honte sociale' est bien achalandé.",
+  "Fais semblant d'avoir un fou rire incontrôlable pendant 30 secondes en regardant quelqu'un dans les yeux.",
+  "Confesse à voix haute une mauvaise action banale que tu as faite cette semaine, avec autant de drama que possible.",
+  "Appelle quelqu'un de ton répertoire et avoue-lui une peur ridicule dont tu n'as jamais parlé.",
+  "Mime une scène de trahison dramatique entre deux amis, tu joues les deux rôles.",
+  "Donne ton téléphone au groupe : ils ont le droit d'écrire UN message à une personne de ton choix (tu dois approuver avant envoi).",
+  "Raconte un dilemme moral réel que tu as vécu, sans choisir de camp : le groupe vote si tu as bien agi.",
+  "Fais une confession publique d'un avis très impopulaire que tu as sur un film, une série ou une célébrité.",
+  "Appelle un commerce quelconque et demande leur avis sur un dilemme moral inventé.",
+  "Imite la façon qu'aurait le joueur de ton choix de réagir en cas de trahison d'un ami.",
+  "Défends pendant 1 minute une opinion que tu trouves toi-même mauvaise."
 ];
 
 const mediumTruths = [

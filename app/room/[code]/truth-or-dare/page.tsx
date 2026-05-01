@@ -35,11 +35,13 @@ export default function TruthOrDareGamePage() {
   const lastRevealedId = useRef<string | null>(null)
   const lastStatus = useRef<string | null>(null)
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
+  const navigatingRef = useRef(false)
   
   useEffect(() => {
     if (typeof window !== 'undefined') {
       flipSound.current = new Audio('/sounds/flip.mp3')
       celebrationSound.current = new Audio('/sounds/celebration.mp3')
+      celebrationSound.current.volume = 0.5
     }
   }, [])
 
@@ -72,7 +74,7 @@ export default function TruthOrDareGamePage() {
     let currentRoomId: string | null = null
 
     const fetchData = async () => {
-      if (!currentRoomId) return
+      if (!currentRoomId || navigatingRef.current) return
       const { data: p } = await supabase.from('players').select().eq('room_id', currentRoomId).order('created_at')
       const list = p ?? []
       setPlayers(list)
@@ -163,7 +165,8 @@ export default function TruthOrDareGamePage() {
           const r = payload.new as Room
           if (r.id === roomData.id) {
             setRoom(r)
-            if (r.status === 'waiting') {
+            if (r.status === 'waiting' && !navigatingRef.current) {
+              navigatingRef.current = true
               router.push(`/room/${code}`)
             }
           }
@@ -175,7 +178,10 @@ export default function TruthOrDareGamePage() {
     }
     init()
 
-    return () => { if (channelRef.current) supabase.removeChannel(channelRef.current) }
+    return () => {
+      navigatingRef.current = true
+      if (channelRef.current) supabase.removeChannel(channelRef.current)
+    }
   }, [code, router, loadChoice])
 
   const difficulty = room?.mode?.split(':')[1] || 'mixte'
@@ -219,18 +225,17 @@ export default function TruthOrDareGamePage() {
   async function resetRoom() {
     if (!myId || !myToken || !room || actioning) return
     setActioning(true)
-    setIsResetting(true)
     try {
       await fetch('/api/game-action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'reset_tod_room', playerId: myId, token: myToken, roomId: room.id }),
       })
+      navigatingRef.current = true
+      setIsResetting(true)
       router.push(`/room/${code}`)
     } catch (e) {
       console.error(e)
-      setIsResetting(false)
-    } finally {
       setActioning(false)
     }
   }
